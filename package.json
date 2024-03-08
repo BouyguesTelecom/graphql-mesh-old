@@ -1,9 +1,7 @@
 {
   "name": "graphql-mesh",
   "workspaces": {
-    "packages": [
-      "packages/*"
-    ]
+    "packages": ["packages/*"]
   },
   "scripts": {
     "postinstall": "npm run postinstall -w graphql-mesh",
