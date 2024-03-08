@@ -1,0 +1,22 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "run-tests",
+      "type": "shell",
+      "command": "./packages/openapi-to-graphql-tests/tests/${input:testID}.*/server.sh",
+      "group": {
+        "kind": "test"
+      }
+    }
+  ],
+  "inputs": [
+    {
+      "id": "testID",
+      "type": "pickString",
+      "description": "Identifier of the test to run",
+      "default": "01",
+      "options": ["01", "02", "03", "04", "05", "06"]
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "name": "graphql-mesh",
+  "workspaces": {
+    "packages": [
+      "packages/*"
+    ]
+  },
+  "scripts": {
+    "postinstall": "npm run postinstall -w graphql-mesh",
+    "start": "npm start -w graphql-mesh",
+    "prepare": "npm run build -w @bytel/spl-ts"
+  },
+  "engines": {
+    "node": "18"
+  },
+  "packageManager": "npm@9.5.1"
+}

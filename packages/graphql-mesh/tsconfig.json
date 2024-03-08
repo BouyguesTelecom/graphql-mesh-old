@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "sourceMap": true,
+    "outDir": "dist"
+  },
+  "exclude": ["node_modules"]
+}

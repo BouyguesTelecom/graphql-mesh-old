@@ -1,0 +1,24 @@
+diff --git a/node_modules/@graphql-mesh/cli/cjs/commands/serve/serve.js b/node_modules/@graphql-mesh/cli/cjs/commands/serve/serve.js
+index a2eb7a1..745a1d3 100644
+--- a/node_modules/@graphql-mesh/cli/cjs/commands/serve/serve.js
++++ b/node_modules/@graphql-mesh/cli/cjs/commands/serve/serve.js
+@@ -30,6 +30,7 @@ function portSelectorFn(sources, logger) {
+     return port;
+ }
+ async function serveMesh({ baseDir, argsPort, getBuiltMesh, logger, rawServeConfig = {}, playgroundTitle, }, cliParams) {
++    const start = Date.now();
+     const { fork: configFork = cross_helpers_1.process.env.NODE_ENV?.toLowerCase() === 'production', port: configPort, hostname = os_1.default.platform() === 'win32' ||
+         // is WSL?
+         os_1.default.release().toLowerCase().includes('microsoft')
+@@ -105,7 +106,10 @@ async function serveMesh({ baseDir, argsPort, getBuiltMesh, logger, rawServeConf
+             if (mesh.schema.getType('BigInt')) {
+                 await Promise.resolve().then(() => tslib_1.__importStar(require('json-bigint-patch')));
+             }
+-            logger.info(`${cliParams.serveMessage}: ${serverUrl}`);
++            const end = Date.now();
++            // Display the init time & the number of datasources loaded
++            logger.info(`Loaded ${mesh.rawSources.length} datasources in ${(end-start)/1000}s`);
++            logger.info(`Server listening: ${serverUrl}`);
+             (0, terminateHandler_js_1.registerTerminateHandler)(eventName => {
+                 const eventLogger = logger.child(`${eventName}  💀`);
+                 eventLogger.info(`Destroying GraphQL Mesh...`);

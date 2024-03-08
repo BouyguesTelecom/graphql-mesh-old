@@ -1,0 +1,14 @@
+diff --git a/node_modules/@graphql-tools/batch-execute/cjs/mergeRequests.js b/node_modules/@graphql-tools/batch-execute/cjs/mergeRequests.js
+index dfe8afc..b60987c 100644
+--- a/node_modules/@graphql-tools/batch-execute/cjs/mergeRequests.js
++++ b/node_modules/@graphql-tools/batch-execute/cjs/mergeRequests.js
+@@ -90,7 +90,8 @@ function mergeRequests(requests, extensionsReducer) {
+         context: requests[0].context,
+         info: requests[0].info,
+         operationType,
+-        rootValue: requests[0].rootValue,
++        // FIXME: Extend the rootValue with the followsLink to save followLink for all requests that are merged and executed in parallel
++        rootValue: { ...requests[0].rootValue, followsLink: requests.map((request) => ({ followLink: request.rootValue.followLink })) },
+     };
+ }
+ exports.mergeRequests = mergeRequests;

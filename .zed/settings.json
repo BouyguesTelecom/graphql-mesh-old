@@ -1,0 +1,10 @@
+// Folder-specific settings
+//
+// For a full list of overridable settings, and general information on folder-specific settings,
+// see the documentation: https://docs.zed.dev/configuration/configuring-zed#folder-specific-settings
+{
+  "ensure_final_newline_on_save": true,
+  "format_on_save": "on",
+  "preferred_line_length": 100,
+  "remove_trailing_whitespace_on_save": true
+}

@@ -1,0 +1,16 @@
+{
+  "recommendations": [
+    // httpYac
+    "anweber.vscode-httpyac",
+    // httpBook
+    "anweber.httpbook",
+    // Markdownlint
+    "davidanson.vscode-markdownlint",
+    // EditorConfig
+    "editorconfig.editorconfig",
+    // Prettier
+    "esbenp.prettier-vscode",
+    // Highlight TODOs and FIXME special comments
+    "wayou.vscode-todo-highlight"
+  ]
+}

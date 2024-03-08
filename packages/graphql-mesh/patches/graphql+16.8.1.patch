@@ -1,0 +1,86 @@
+diff --git a/node_modules/graphql/type/definition.js b/node_modules/graphql/type/definition.js
+index b27c083..dc3beef 100644
+--- a/node_modules/graphql/type/definition.js
++++ b/node_modules/graphql/type/definition.js
+@@ -713,6 +713,14 @@ class GraphQLObjectType {
+     return this._fields;
+   }
+
++  setFields(fields) {
++    this._fields = {...this.getFields(), ...fields}
++  }
++
++  overwriteField(fieldName, field) {
++    this._fields[fieldName] = field
++  }
++
+   getInterfaces() {
+     if (typeof this._interfaces === 'function') {
+       this._interfaces = this._interfaces();
+@@ -915,6 +923,10 @@ class GraphQLInterfaceType {
+     return this._fields;
+   }
+
++  overwriteField(fieldName, field) {
++    this._fields[fieldName] = field
++  }
++
+   getInterfaces() {
+     if (typeof this._interfaces === 'function') {
+       this._interfaces = this._interfaces();
+@@ -1100,11 +1112,7 @@ class GraphQLEnumType {
+     const enumValue = this._valueLookup.get(outputValue);
+
+     if (enumValue === undefined) {
+-      throw new _GraphQLError.GraphQLError(
+-        `Enum "${this.name}" cannot represent value: ${(0, _inspect.inspect)(
+-          outputValue,
+-        )}`,
+-      );
++      return outputValue
+     }
+
+     return enumValue.name;
+diff --git a/node_modules/graphql/validation/rules/UniqueFieldDefinitionNamesRule.js b/node_modules/graphql/validation/rules/UniqueFieldDefinitionNamesRule.js
+index f0d9fcb..701988e 100644
+--- a/node_modules/graphql/validation/rules/UniqueFieldDefinitionNamesRule.js
++++ b/node_modules/graphql/validation/rules/UniqueFieldDefinitionNamesRule.js
+@@ -47,16 +47,12 @@ function UniqueFieldDefinitionNamesRule(context) {
+     for (const fieldDef of fieldNodes) {
+       const fieldName = fieldDef.name.value;
+
+-      if (hasField(existingTypeMap[typeName], fieldName)) {
+-        context.reportError(
+-          new _GraphQLError.GraphQLError(
+-            `Field "${typeName}.${fieldName}" already exists in the schema. It cannot also be defined in this type extension.`,
+-            {
+-              nodes: fieldDef.name,
+-            },
+-          ),
+-        );
+-      } else if (fieldNames[fieldName]) {
++      /**
++       * A schema field can be definied as a link in one swagger and as a property in another one.
++       * This conflict throws an error at runtime, preventing us to run queries.
++       * We deleted this validation as a temporary fix.
++       */
++      if (fieldNames[fieldName]) {
+         context.reportError(
+           new _GraphQLError.GraphQLError(
+             `Field "${typeName}.${fieldName}" can only be defined once.`,
+@@ -73,15 +69,3 @@ function UniqueFieldDefinitionNamesRule(context) {
+     return false;
+   }
+ }
+-
+-function hasField(type, fieldName) {
+-  if (
+-    (0, _definition.isObjectType)(type) ||
+-    (0, _definition.isInterfaceType)(type) ||
+-    (0, _definition.isInputObjectType)(type)
+-  ) {
+-    return type.getFields()[fieldName] != null;
+-  }
+-
+-  return false;
+-}
