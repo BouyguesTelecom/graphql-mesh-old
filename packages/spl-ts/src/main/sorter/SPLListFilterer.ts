@@ -26,7 +26,7 @@ export class SPLListFilterer {
   public filter(
     query: string,
     input: Map<string, Object>[],
-    variables: Map<string, Object>
+    variables: Map<string, Object> = new Map()
   ): Map<string, Object>[] {
     const queryContext: QueryContext = this.splQueryToTreeConverter.createTree(query)
     const limitObj: Limit = this.splLimitExtractor.fetchLimit(queryContext, variables)
@@ -39,20 +39,15 @@ export class SPLListFilterer {
       .sort(this.splComparatorFactory.createComparator(queryContext))
   }
 
-  public filter_no_variables(query: string, input: Map<string, Object>[]) {
-    return this.filter(query, input, new Map())
-  }
-
   public formatInput(input: any): Map<string, Object>[] {
     const parsedJsonInput = JSON.parse(JSON.stringify(input))
-
     const inputMap: Map<string, Object>[] = []
 
     parsedJsonInput.forEach((item: Map<string, Object>) => {
       const newItem: Map<string, Object> = new Map()
 
       Object.entries(item).forEach(([key, value]) => {
-        if (typeof value === 'object') {
+        if (value && typeof value === 'object') {
           newItem.set(key, new Map(Object.entries(value)))
         } else {
           newItem.set(key, value)
@@ -62,6 +57,20 @@ export class SPLListFilterer {
       inputMap.push(newItem)
     })
     return inputMap
+  }
+
+  public formatVariables(variables: any): Map<string, Object> {
+    const newItem: Map<string, Object> = new Map()
+    if (!Array.isArray(variables)) {
+      Object.entries(variables).forEach(([key, value]) => {
+        if (value && typeof value === 'object') {
+          newItem.set(key, new Map(Object.entries(value)))
+        } else {
+          newItem.set(key, value as Object)
+        }
+      })
+    }
+    return newItem
   }
 
   public formatOutput(output: Map<string, Object>[]): any[] {

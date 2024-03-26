@@ -19,7 +19,7 @@
     "@graphql-tools/utils": "^10.0.12",
     "glob": "^10.3.10",
     "graphql": "^16.8.1",
-    "@bytel/spl-ts": "*"
+    "spl-ts": "*"
   },
   "devDependencies": {
     "@graphql-mesh/types": "^0.96.3",

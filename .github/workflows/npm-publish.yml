@@ -1,0 +1,37 @@
+name: npm publish
+
+on:
+  # release:
+  #   types: [published]
+  push:
+    tags:
+      - '*'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          registry-url: https://registry.npmjs.org/
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build library
+        run: npm run build -w spl-ts
+
+      - name: Determine version from tag
+        id: determine_version
+        run: echo "::set-output name=VERSION::${GITHUB_REF#refs/tags/spl-ts@}"
+
+      - name: Publish to npm
+        # run: npm version "${{ steps.determine_version.outputs.VERSION }}" -w spl-ts && npm publish -w spl-ts
+        run: echo "Published version ${{ steps.determine_version.outputs.VERSION }}"
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPMJS_TOKEN }}

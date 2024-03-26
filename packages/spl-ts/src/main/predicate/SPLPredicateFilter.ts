@@ -1,6 +1,6 @@
 import { PredicateContext, Predicate_memberContext, QueryContext } from '../antlr/SPLParser'
 import { OperandReader } from '../OperandReader'
-import { PredicateOperation } from './PredicateOperation'
+import { PredicateOperation } from './operations'
 
 export class SPLPredicateFilter {
   private operandReader: OperandReader

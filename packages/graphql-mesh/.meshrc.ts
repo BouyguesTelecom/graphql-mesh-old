@@ -6,9 +6,7 @@ export default <Config>{
   additionalTypeDefs: [additionalTypeDefs],
   additionalResolvers: [resolvers],
   transforms: [
-    {
-      transforms: {} //  '@bytel/spl-ts': {}
-    }
+    { "spl-ts": {} }
   ],
   serve: {
     cors: {
