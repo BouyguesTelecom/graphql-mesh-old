@@ -2,16 +2,10 @@ import { OperandReader } from './OperandReader'
 import { PropertyWalker } from './PropertyWalker'
 import { SPLQueryToTreeConverter } from './antlr/SPLQueryToTreeConverter'
 import { SPLLimitExtractor } from './limiter/SPLLimitExtractor'
-import { PredicateOperation } from './predicate/PredicateOperation'
 import { SPLPredicateFilter } from './predicate/SPLPredicateFilter'
 import { SPLComparatorFactory } from './sorter/SPLComparatorFactory'
 import { SPLListFilterer } from './sorter/SPLListFilterer'
-import { StringOperations } from './predicate/StringOperations'
-import { NumberOperations } from './predicate/NumberOperations'
-import { BooleanOperations } from './predicate/BooleanOperations'
-import { DateOperations } from './predicate/DateOperations'
-import { StringListStringOperations } from './predicate/StringListStringOperations'
-import { BooleanListBooleansOperations } from './predicate/BooleanListBooleansOperations'
+import { StringOperations, StringListStringOperations, DateOperations, NumberOperations, BooleanOperations, BooleanListBooleansOperations, PredicateOperation } from './predicate/operations'
 
 const operations: PredicateOperation<any, any>[] = [
   new StringOperations(),

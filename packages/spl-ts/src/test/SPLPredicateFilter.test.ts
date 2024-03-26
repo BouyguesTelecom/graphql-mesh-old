@@ -2,14 +2,16 @@ import { test, expect } from 'vitest'
 import { OperandReader } from '../main/OperandReader'
 import { PropertyWalker } from '../main/PropertyWalker'
 import { SPLPredicateFilter } from '../main/predicate/SPLPredicateFilter'
-import { StringOperations } from '../main/predicate/StringOperations'
-import { NumberOperations } from '../main/predicate/NumberOperations'
-import { BooleanOperations } from '../main/predicate/BooleanOperations'
-import { DateOperations } from '../main/predicate/DateOperations'
-import { StringListStringOperations } from '../main/predicate/StringListStringOperations'
-import { BooleanListBooleansOperations } from '../main/predicate/BooleanListBooleansOperations'
 import { SPLQueryToTreeConverter } from '../main/antlr/SPLQueryToTreeConverter'
 import { QueryContext } from '../main/antlr/SPLParser'
+import {
+  StringOperations,
+  StringListStringOperations,
+  DateOperations,
+  NumberOperations,
+  BooleanOperations,
+  BooleanListBooleansOperations
+} from '../main/predicate/operations'
 
 type MapDataset = Map<string, Object>
 

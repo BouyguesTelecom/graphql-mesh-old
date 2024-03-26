@@ -4,9 +4,13 @@
     "packages": ["packages/*"]
   },
   "scripts": {
-    "postinstall": "npm run postinstall -w graphql-mesh",
+    "postinstall": "npm run postinstall -w graphql-mesh && patch-package",
     "start": "npm start -w graphql-mesh",
-    "prepare": "npm run build -w @bytel/spl-ts"
+    "prepare": "npm run build -w spl-ts",
+    "test": "npm test -w spl-ts"
+  },
+  "devDependencies": {
+    "patch-package": "^8.0.0"
   },
   "engines": {
     "node": "18"
