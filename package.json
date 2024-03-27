@@ -4,9 +4,10 @@
     "packages": ["packages/*"]
   },
   "scripts": {
+    "generate:mesh:lock": "cd packages/graphql-mesh && npm i --package-lock-only --workspaces=false",
     "postinstall": "npm run postinstall -w graphql-mesh && patch-package",
+    "prepare": "npm run pack -w spl-ts",
     "start": "npm start -w graphql-mesh",
-    "prepare": "npm run build -w spl-ts",
     "test": "npm test -w spl-ts"
   },
   "devDependencies": {

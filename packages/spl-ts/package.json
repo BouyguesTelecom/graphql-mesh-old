@@ -1,6 +1,6 @@
 {
   "name": "spl-ts",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "type": "module",
   "main": "_build/cjs/index.js",
   "module": "_build/esm/index.js",
@@ -15,13 +15,13 @@
     "_build/**/*"
   ],
   "scripts": {
-    "dev": "vite",
-    "build": "rm -rf _build && npm run build:esm && npm run build:cjs && node ./scripts/prepare-package-json",
-    "build:esm": "tsc --project tsconfig-esm.json",
+    "antlr4ts": "antlr4ts -visitor src/main/antlr/SPL.g4",
     "build:cjs": "tsc --project tsconfig-cjs.json",
-    "preview": "vite preview",
-    "test": "vitest",
-    "antlr4ts": "antlr4ts -visitor src/main/antlr/SPL.g4"
+    "build:esm": "tsc --project tsconfig-esm.json",
+    "build": "rm -rf _build && npm run build:esm && npm run build:cjs && node ./scripts/prepare-package-json",
+    "dev": "vite",
+    "pack": "npm run build && npm pack --pack-destination ../graphql-mesh/local-pkg",
+    "test": "vitest"
   },
   "devDependencies": {
     "@types/node": "^20.11.19",

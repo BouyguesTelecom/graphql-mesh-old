@@ -1,20 +1,18 @@
 import type { Config } from '@graphql-mesh/types/typings/config'
-import { sources, additionalTypeDefs, resolvers } from './config'
+import {
+  openapiSources,
+  additionalTypeDefs,
+  resolvers,
+  defaultConfig,
+  othersSources
+} from './setup'
 
-export default <Config>{
-  sources,
-  additionalTypeDefs: [additionalTypeDefs],
-  additionalResolvers: [resolvers],
-  transforms: [
-    { "spl-ts": {} }
-  ],
-  serve: {
-    cors: {
-      origin: process.env.CORS_ORIGIN ?? '*'
-    },
-    fork: 1,
-    playground: true,
-    playgroundTitle: 'Console GraphQL',
-    browser: false
-  }
+const config = <Config>{
+  ...defaultConfig,
+  transforms: [{ "spl-ts": {} }, ...(defaultConfig.transforms || [])],
+  sources: [...openapiSources, ...othersSources],
+  additionalTypeDefs: [...(defaultConfig.additionalTypeDefs || []), additionalTypeDefs],
+  additionalResolvers: [...(defaultConfig.additionalResolvers || []), resolvers]
 }
+
+export default config

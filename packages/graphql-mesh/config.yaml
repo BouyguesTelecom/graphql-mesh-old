@@ -1,0 +1,23 @@
+sources:
+  - name: CheckMail
+    handler:
+      openapi:
+        source: https://swap.int.nbyt.fr/ihm-bytel/R-CHECKEMAIL/ADRESSE-MAIL/checkMail@1.2.10/ADRESSE-MAIL-checkMail-consumer-swagger.json
+
+  - name: FeatureToggles
+    handler:
+      openapi:
+        source: https://swap.int.nbyt.fr/ihm-bytel/CONFEATURE/FEATURE-TOGGLES-PROJECT/getFeatureToggles@1.0.2/FEATURE-TOGGLES-PROJECT-getFeatureToggles-consumer-swagger.json
+
+#transforms: [{ "@bytel/spl-ts": {} }]
+serve:
+  port: 4000
+  hostname: "0.0.0.0"
+  cors:
+    origin: "*"
+  fork: 1
+  playground: true
+  playgroundTitle: Console GraphQL Test
+  browser: false
+
+skipSSLValidation: true

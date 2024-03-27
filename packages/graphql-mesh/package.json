@@ -1,9 +1,10 @@
 {
   "scripts": {
+    "build": "npm run downloadswaggers && mesh build",
+    "downloadswaggers": "NODE_TLS_REJECT_UNAUTHORIZED='0' sucrase-node ./scripts/downloadSources.ts",
     "postinstall": "patch-package",
-    "start": "mesh dev",
-    "build": "mesh build",
-    "serve": "sucrase-node serve.ts"
+    "serve": "npm run build && sucrase-node serve.ts",
+    "start": "npm run downloadswaggers && mesh dev"
   },
   "dependencies": {
     "@graphql-mesh/cache-localforage": "^0.96.2",
@@ -19,11 +20,12 @@
     "@graphql-tools/utils": "^10.0.12",
     "glob": "^10.3.10",
     "graphql": "^16.8.1",
-    "spl-ts": "*"
+    "patch-package": "^8.0.0",
+    "spl-ts": "file:./local-pkg/spl-ts-1.0.0.tgz",
+    "sucrase": "^3.35.0"
   },
   "devDependencies": {
     "@graphql-mesh/types": "^0.96.3",
-    "antlr4ts": "^0.5.0-alpha.4",
-    "patch-package": "^8.0.0"
+    "antlr4ts": "^0.5.0-alpha.4"
   }
 }
