@@ -328,6 +328,10 @@ typeDefsAndResolvers.typeDefs += /* GraphQL */ `
 `
 
 typeDefsAndResolvers.typeDefs += /* GraphQL */ `
+  directive @noAuth on FIELD
+`
+
+typeDefsAndResolvers.typeDefs += /* GraphQL */ `
   directive @upper on FIELD
 `
 

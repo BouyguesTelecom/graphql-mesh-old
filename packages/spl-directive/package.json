@@ -1,5 +1,5 @@
 {
-  "name": "spl-ts",
+  "name": "spl-directive",
   "version": "1.0.0",
   "type": "module",
   "main": "_build/cjs/index.js",

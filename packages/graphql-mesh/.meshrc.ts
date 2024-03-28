@@ -9,7 +9,12 @@ import {
 
 const config = <Config>{
   ...defaultConfig,
-  transforms: [{ "spl-ts": {} }, ...(defaultConfig.transforms || [])],
+  transforms: [
+    { 'spl-directive': {} },
+    { 'headers-directive': {} },
+    { 'no-auth-directive': {} },
+    ...(defaultConfig.transforms || [])
+  ],
   sources: [...openapiSources, ...othersSources],
   additionalTypeDefs: [...(defaultConfig.additionalTypeDefs || []), additionalTypeDefs],
   additionalResolvers: [...(defaultConfig.additionalResolvers || []), resolvers]

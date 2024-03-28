@@ -20,8 +20,10 @@
     "@graphql-tools/utils": "^10.0.12",
     "glob": "^10.3.10",
     "graphql": "^16.8.1",
+    "headers-directive": "file:./local-pkg/headers-directive-1.0.0.tgz",
+    "no-auth-directive": "file:./local-pkg/no-auth-directive-1.0.0.tgz",
     "patch-package": "^8.0.0",
-    "spl-ts": "file:./local-pkg/spl-ts-1.0.0.tgz",
+    "spl-directive": "file:./local-pkg/spl-directive-1.0.0.tgz",
     "sucrase": "^3.35.0"
   },
   "devDependencies": {

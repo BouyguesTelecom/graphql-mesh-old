@@ -5,12 +5,12 @@
   },
   "scripts": {
     "generate:mesh:lock": "cd packages/graphql-mesh && npm i --package-lock-only --workspaces=false",
-    "postinstall": "npm run postinstall -w graphql-mesh && patch-package",
-    "prepare": "npm run pack -w spl-ts",
-    "start": "npm start -w graphql-mesh",
-    "test": "npm test -w spl-ts"
+    "postinstall": "npm run postinstall -w graphql-mesh && patch-package && npm run generate:mesh:lock",
+    "prepare": "concurrently \"npm run pack -w spl-directive\" \"npm run pack -w headers-directive\" \"npm run pack -w no-auth-directive\"",
+    "start": "npm start -w graphql-mesh"
   },
   "devDependencies": {
+    "concurrently": "^8.2.2",
     "patch-package": "^8.0.0"
   },
   "engines": {
