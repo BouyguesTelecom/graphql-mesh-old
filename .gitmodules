@@ -1,3 +1,0 @@
-[submodule "vendors/openapi-to-graphql"]
-	path = vendors/openapi-to-graphql
-	url = git@github.com:IBM/openapi-to-graphql.git
