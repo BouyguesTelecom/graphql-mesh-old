@@ -1,5 +1,5 @@
 {
-  "name": "no-auth-directive",
+  "name": "directive-headers",
   "version": "1.0.0",
   "type": "module",
   "main": "_build/cjs/index.js",

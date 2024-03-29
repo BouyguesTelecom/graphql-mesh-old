@@ -1,4 +1,4 @@
-name: Run Unit Tests for spl-directive library
+name: Run Unit Tests for directive-spl library
 
 on:
   push:
@@ -27,4 +27,4 @@ jobs:
         run: npm install
 
       - name: Run tests
-        run: npm test -w spl-directive
+        run: npm test -w directive-spl

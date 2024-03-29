@@ -10,9 +10,9 @@ import {
 const config = <Config>{
   ...defaultConfig,
   transforms: [
-    { 'spl-directive': {} },
-    { 'headers-directive': {} },
-    { 'no-auth-directive': {} },
+    { 'directive-spl': {} },
+    { 'directive-headers': {} },
+    { 'directive-no-auth': {} },
     ...(defaultConfig.transforms || [])
   ],
   sources: [...openapiSources, ...othersSources],

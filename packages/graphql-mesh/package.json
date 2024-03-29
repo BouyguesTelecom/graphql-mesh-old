@@ -1,7 +1,7 @@
 {
   "scripts": {
     "build": "npm run downloadswaggers && mesh build",
-    "downloadswaggers": "NODE_TLS_REJECT_UNAUTHORIZED='0' sucrase-node ./scripts/downloadSources.ts",
+    "downloadswaggers": "NODE_TLS_REJECT_UNAUTHORIZED='0' sucrase-node ./scripts/download-sources.ts",
     "postinstall": "patch-package",
     "serve": "npm run build && sucrase-node serve.ts",
     "start": "npm run downloadswaggers && mesh dev"
@@ -20,10 +20,10 @@
     "@graphql-tools/utils": "^10.0.12",
     "glob": "^10.3.10",
     "graphql": "^16.8.1",
-    "headers-directive": "file:./local-pkg/headers-directive-1.0.0.tgz",
-    "no-auth-directive": "file:./local-pkg/no-auth-directive-1.0.0.tgz",
+    "directive-headers": "file:./local-pkg/directive-headers-1.0.0.tgz",
+    "directive-no-auth": "file:./local-pkg/directive-no-auth-1.0.0.tgz",
     "patch-package": "^8.0.0",
-    "spl-directive": "file:./local-pkg/spl-directive-1.0.0.tgz",
+    "directive-spl": "file:./local-pkg/directive-spl-1.0.0.tgz",
     "sucrase": "^3.35.0"
   },
   "devDependencies": {
