@@ -9,7 +9,7 @@
     "clean:modules": "npm exec --workspaces -- npx rimraf node_modules && npx rimraf node_modules",
     "generate:mesh:lock": "cd packages/graphql-mesh && npm i --package-lock-only --workspaces=false",
     "postinstall": "npm run postinstall -w graphql-mesh && patch-package && npm run generate:mesh:lock",
-    "prepare": "concurrently \"npm run pack -w directive-spl\" \"npm run pack -w directive-headers\" \"npm run pack -w directive-no-auth\"",
+    "preinstall": "concurrently \"npm run pack -w directive-spl\" \"npm run pack -w directive-headers\" \"npm run pack -w directive-no-auth\"",
     "start": "npm start -w graphql-mesh"
   },
   "devDependencies": {
