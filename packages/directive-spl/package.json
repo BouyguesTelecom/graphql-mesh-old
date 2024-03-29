@@ -41,5 +41,8 @@
   },
   "dependencies": {
     "antlr4ts": "^0.5.0-alpha.4"
+  },
+  "optionalDependencies": {
+    "@rollup/rollup-linux-x64-gnu": "4.9.5"
   }
 }
