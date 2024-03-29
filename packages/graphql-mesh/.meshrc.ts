@@ -1,11 +1,13 @@
 import type { Config } from '@graphql-mesh/types/typings/config'
-import {
-  openapiSources,
-  additionalTypeDefs,
-  resolvers,
-  defaultConfig,
-  othersSources
-} from './setup'
+import { directiveTypeDefs } from './utils/directives-typedefs'
+
+import SetupSwagger from './utils/generate-typedefs-resolvers'
+const setupSwagger = new SetupSwagger()
+
+const { typeDefs, resolvers } = setupSwagger.createTypeDefsAndResolvers()
+const openapiSources = setupSwagger.getOpenApiSources()
+const othersSources = setupSwagger.getOtherSources()
+const defaultConfig = setupSwagger.config
 
 const config = <Config>{
   ...defaultConfig,
@@ -16,7 +18,7 @@ const config = <Config>{
     ...(defaultConfig.transforms || [])
   ],
   sources: [...openapiSources, ...othersSources],
-  additionalTypeDefs: [...(defaultConfig.additionalTypeDefs || []), additionalTypeDefs],
+  additionalTypeDefs: [...(defaultConfig.additionalTypeDefs || []), typeDefs, directiveTypeDefs],
   additionalResolvers: [...(defaultConfig.additionalResolvers || []), resolvers]
 }
 

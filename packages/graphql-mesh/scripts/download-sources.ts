@@ -1,5 +1,5 @@
 import { readFileOrUrl, DefaultLogger } from '@graphql-mesh/utils'
-import { getConfig } from '../helpers/config'
+import { getConfig } from '../utils/config'
 import { writeFileSync, existsSync, mkdirSync } from 'node:fs'
 import { fetch } from '@whatwg-node/fetch'
 const logger = new DefaultLogger()

@@ -1,6 +1,6 @@
 import { createServer } from 'node:http'
 import { createBuiltMeshHTTPHandler } from './.mesh'
-import { getConfig } from './helpers'
+import { getConfig } from './utils/config'
 const config = getConfig() || {}
 
 const PORT = config.serve?.port ?? 4000
