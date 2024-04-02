@@ -20,8 +20,8 @@ jobs:
           node-version: 18
           registry-url: https://registry.npmjs.org/
 
-      - name: Install dependencies
-        run: npm install
+      - name: Copy patches for Docker Buildx
+        run: cp -r patches/* packages/graphql-mesh/patches
 
       - name: Set up Docker Buildx
         id: buildx
