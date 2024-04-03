@@ -15,7 +15,6 @@ export const getConfig = (): Config => {
   // Load yaml config file
   try {
     const configPath = resolve('./config.yaml')
-    console.log('🚀 ~ getConfig ~ configPath:', configPath)
     config = load(readFileSync(configPath, { encoding: 'utf-8' }))
   } catch (e) {}
 

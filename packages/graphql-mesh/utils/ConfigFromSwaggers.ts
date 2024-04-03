@@ -5,8 +5,9 @@ import { getConfig, getSourceOpenapiEnpoint } from './config'
 import { getAvailableTypes } from './swaggers'
 import { mergeObjects } from './helpers'
 import { generateTypeDefsAndResolversFromSwagger } from './swaggers'
+import { directiveTypeDefs } from './directive-typedefs'
 
-export default class TypedesfResolvers {
+export default class ConfigFromSwaggers {
   swaggers: SwaggerName[] = []
   specs: Spec[] = []
   catalog: Catalog = {}
@@ -98,11 +99,36 @@ export default class TypedesfResolvers {
     )
   }
 
+  /*
+   * Get sources that are not openapi
+   */
   getOtherSources() {
     return (
       this.config.sources?.filter(
         (source: { handler: { openapi: any } }) => !source?.handler?.openapi
       ) || []
     )
+  }
+
+  /**
+   * Get additional type definitions, resolvers, sources from swaggers and default config
+   *
+   * @returns {ConfigExtension} - defaultConfig, additionalTypeDefs, additionalResolvers, sources
+   */
+
+  getMeshConfigFromSwaggers(): {
+    defaultConfig: any
+    additionalTypeDefs: string[]
+    additionalResolvers: any
+    sources: any[]
+  } {
+    const { typeDefs, resolvers } = this.createTypeDefsAndResolvers()
+
+    return {
+      defaultConfig: this.config,
+      additionalTypeDefs: [typeDefs, directiveTypeDefs],
+      additionalResolvers: resolvers,
+      sources: [...this.getOpenApiSources(), ...this.getOtherSources()]
+    }
   }
 }

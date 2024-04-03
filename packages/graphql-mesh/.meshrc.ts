@@ -1,13 +1,9 @@
 import type { Config } from '@graphql-mesh/types/typings/config'
-import { directiveTypeDefs } from './utils/directives-typedefs'
+import ConfigFromSwaggers from './utils/ConfigFromSwaggers'
 
-import SetupSwagger from './utils/generate-typedefs-resolvers'
-const setupSwagger = new SetupSwagger()
-
-const { typeDefs, resolvers } = setupSwagger.createTypeDefsAndResolvers()
-const openapiSources = setupSwagger.getOpenApiSources()
-const othersSources = setupSwagger.getOtherSources()
-const defaultConfig = setupSwagger.config
+const configFromSwaggers = new ConfigFromSwaggers()
+const { defaultConfig, additionalResolvers, additionalTypeDefs, sources } =
+  configFromSwaggers.getMeshConfigFromSwaggers()
 
 const config = <Config>{
   ...defaultConfig,
@@ -17,9 +13,9 @@ const config = <Config>{
     { 'directive-no-auth': {} },
     ...(defaultConfig.transforms || [])
   ],
-  sources: [...openapiSources, ...othersSources],
-  additionalTypeDefs: [...(defaultConfig.additionalTypeDefs || []), typeDefs, directiveTypeDefs],
-  additionalResolvers: [...(defaultConfig.additionalResolvers || []), resolvers]
+  sources: [...sources],
+  additionalTypeDefs: [...(defaultConfig.additionalTypeDefs || []), ...additionalTypeDefs],
+  additionalResolvers: [...(defaultConfig.additionalResolvers || []), additionalResolvers]
 }
 
 export default config
