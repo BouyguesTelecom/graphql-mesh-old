@@ -1,8 +1,19 @@
 import { globSync } from 'glob'
 import { readFileSync } from 'node:fs'
-import type { Catalog, ConfigExtension, Resolvers, Spec, SwaggerName } from './types'
+import type { Catalog, Spec, SwaggerName, Resolvers, ConfigExtension } from './types'
+import {
+  getConfig,
+  mergeObjects,
+  trimLinks,
+  anonymizePathAndGetParams,
+  getOpenapiEnpoint,
+  getAvailableTypes
+} from './helpers'
 
-const SWAGGERS: SwaggerName[] = globSync('./specs/**/*.json').sort((a, b) => a.localeCompare(b))
+// Load the config file
+const config = getConfig()
+
+const SWAGGERS: SwaggerName[] = globSync('./sources/**/*.json').sort((a, b) => a.localeCompare(b))
 
 const specsRaw = SWAGGERS.map(
   (swagger) => <Spec>JSON.parse(readFileSync(swagger, { encoding: 'utf-8' }))
@@ -12,12 +23,10 @@ const catalog = specsRaw.reduce((acc, spec, i) => {
   Object.keys(spec.paths).forEach((path) => {
     const query = spec.paths[path]?.get
     const content = query?.responses['200']?.['content']
-    if (content) {
-      const ref = content['application/json']?.schema['$ref'] ?? content['*/*']?.schema['$ref']
-      const schema = ref?.replace('#/components/schemas/', '')
-      if (schema) {
-        acc[path] = [query?.operationId, schema, SWAGGERS[i]]
-      }
+    const ref = content?.['application/json']?.schema['$ref'] ?? content?.['*/*']?.schema['$ref']
+    const schema = ref?.replace('#/components/schemas/', '')
+    if (schema) {
+      acc[path] = [query?.operationId, schema, SWAGGERS[i]]
     }
   })
   return acc
@@ -49,41 +58,20 @@ specsRaw.forEach((s) => {
   }
 })
 
-const trimLinks = (str: string) => str.replace(/Links$/, '')
-const mergeObjects = (obj1: Resolvers, obj2: Resolvers) => {
-  for (const key in obj2) {
-    if (key in obj1 && typeof obj1[key] === 'object') {
-      obj1[key] = mergeObjects(obj1[key], obj2[key])
-    } else {
-      obj1[key] = obj2[key]
-    }
-  }
-  return obj1
-}
-const getAvailableTypes = (specs: Spec[]) =>
-  specs.flatMap((spec) => Object.keys(spec.components?.schemas ?? {}))
-function anonymizePathAndGetParams(path: string) {
-  const params: string[] = path.match(/\{(.*?)\}/g) ?? []
-
-  return {
-    anonymizedPath: path.replace(/\/(\{[^}]+\})/g, '/{}'),
-    params: params.map((param) => param.replace(/[{}]/g, ''))
-  }
-}
-
-export const sources = SWAGGERS.map((source) => ({
-  name: source,
-  handler: {
-    openapi: {
-      source,
-      endpoint: '{env.ENDPOINT}',
-      ignoreErrorResponses: true,
-      operationHeaders: {
-        Authorization: `{context.headers["authorization"]}`
+export const openapiSources =
+  SWAGGERS.map((source) => ({
+    name: source,
+    handler: {
+      openapi: {
+        source,
+        endpoint: getOpenapiEnpoint(source, config) || '{env.ENDPOINT}',
+        ignoreErrorResponses: true,
+        operationHeaders: {
+          Authorization: `{context.headers["authorization"]}`
+        }
       }
     }
-  }
-}))
+  })) || []
 
 /**
  * This function creates, for a Swagger file, the additional typeDefs for each schema having at least one x-link, and one resolver for each x-link
@@ -340,6 +328,10 @@ typeDefsAndResolvers.typeDefs += /* GraphQL */ `
 `
 
 typeDefsAndResolvers.typeDefs += /* GraphQL */ `
+  directive @noAuth on FIELD
+`
+
+typeDefsAndResolvers.typeDefs += /* GraphQL */ `
   directive @upper on FIELD
 `
 
@@ -349,6 +341,17 @@ typeDefsAndResolvers.typeDefs += /* GraphQL */ `
     href: String
   }
 `
+typeDefsAndResolvers.typeDefs += /* GraphQL */ `
+  input Header {
+    key: String
+    value: String
+  }
+
+  directive @headers(input: [Header]) on FIELD
+`
 
 export const additionalTypeDefs = typeDefsAndResolvers.typeDefs
 export const resolvers = typeDefsAndResolvers.resolvers
+export const defaultConfig = config
+export const othersSources =
+  config.sources?.filter((source: { handler: { openapi: any } }) => !source?.handler?.openapi) || []

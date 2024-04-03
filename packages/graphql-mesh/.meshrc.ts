@@ -1,22 +1,23 @@
 import type { Config } from '@graphql-mesh/types/typings/config'
-import { sources, additionalTypeDefs, resolvers } from './config'
+import {
+  openapiSources,
+  additionalTypeDefs,
+  resolvers,
+  defaultConfig,
+  othersSources
+} from './setup'
 
-export default <Config>{
-  sources,
-  additionalTypeDefs: [additionalTypeDefs],
-  additionalResolvers: [resolvers],
+const config = <Config>{
+  ...defaultConfig,
   transforms: [
-    {
-      transforms: {} //  '@bytel/spl-ts': {}
-    }
+    { 'directive-spl': {} },
+    { 'directive-headers': {} },
+    { 'directive-no-auth': {} },
+    ...(defaultConfig.transforms || [])
   ],
-  serve: {
-    cors: {
-      origin: process.env.CORS_ORIGIN ?? '*'
-    },
-    fork: 1,
-    playground: true,
-    playgroundTitle: 'Console GraphQL',
-    browser: false
-  }
+  sources: [...openapiSources, ...othersSources],
+  additionalTypeDefs: [...(defaultConfig.additionalTypeDefs || []), additionalTypeDefs],
+  additionalResolvers: [...(defaultConfig.additionalResolvers || []), resolvers]
 }
+
+export default config

@@ -1,5 +1,5 @@
 {
-  "name": "@bytel/spl-ts",
+  "name": "directive-spl",
   "version": "1.0.0",
   "type": "module",
   "main": "_build/cjs/index.js",
@@ -15,14 +15,13 @@
     "_build/**/*"
   ],
   "scripts": {
-    "dev": "vite",
-    "// build": "tsc && vite build",
-    "build": "rm -rf _build && npm run build:esm && npm run build:cjs && node ./scripts/prepare-package-json",
-    "build:esm": "tsc --project tsconfig-esm.json",
+    "antlr4ts": "antlr4ts -visitor src/main/antlr/SPL.g4",
     "build:cjs": "tsc --project tsconfig-cjs.json",
-    "preview": "vite preview",
-    "test": "vitest",
-    "antlr4ts": "antlr4ts -visitor src/main/antlr/SPL.g4"
+    "build:esm": "tsc --project tsconfig-esm.json",
+    "build": "rm -rf _build && npm run build:esm && npm run build:cjs && node ./scripts/prepare-package-json",
+    "dev": "vite",
+    "pack": "npm run build && npm pack --pack-destination ../graphql-mesh/local-pkg",
+    "test": "vitest"
   },
   "devDependencies": {
     "@types/node": "^20.11.19",
@@ -33,7 +32,17 @@
     "vite-plugin-dts": "^3.7.2",
     "vitest": "^1.3.0"
   },
+  "peerDependencies": {
+    "@graphql-mesh/cache-localforage": "*",
+    "@graphql-tools/utils": "*",
+    "@graphql-mesh/types": "*",
+    "@graphql-mesh/utils": "*",
+    "graphql": "*"
+  },
   "dependencies": {
     "antlr4ts": "^0.5.0-alpha.4"
+  },
+  "optionalDependencies": {
+    "@rollup/rollup-linux-x64-gnu": "4.9.5"
   }
 }

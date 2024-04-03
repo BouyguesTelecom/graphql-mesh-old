@@ -1,5 +1,4 @@
 import { type OpenAPIV3 } from 'openapi-types'
-// import { Resolvers as _Resolvers } from './.mesh'
 
 import {
   AdditionalStitchingResolverObject,
@@ -12,6 +11,7 @@ type Resolvers =
   | AdditionalStitchingResolverObject
   | AdditionalStitchingBatchResolverObject
   | AdditionalSubscriptionObject
+  | {}
 
 type SwaggerName = string
 type Spec = OpenAPIV3.Document

@@ -1,9 +1,8 @@
 import { defaultFieldResolver, GraphQLSchema } from 'graphql'
 import { MeshTransform } from '@graphql-mesh/types'
 import { MapperKind, mapSchema } from '@graphql-tools/utils'
-import { splListFilterer } from '@bytel/spl-ts'
 
-export default class DirectivesTransform implements MeshTransform {
+export default class NoAuthDirectiveTransform implements MeshTransform {
   noWrap = true
 
   transformSchema(schema: GraphQLSchema) {
@@ -12,28 +11,25 @@ export default class DirectivesTransform implements MeshTransform {
         const originalResolver =
           fieldConfig.resolve != null ? fieldConfig.resolve : defaultFieldResolver
 
-        const resolver = async (next, source, args, context, info) => {
+        const resolver = async (next: any , _source: any, _args: any, context: any, info: any) => {
           const { directives } = info.fieldNodes[0]
-          const upperDirective = directives.find((directive) => directive.name.value === 'upper')
-          const splDirective = directives.find((directive) => directive.name.value === 'SPL')
+          const upperDirective = directives.find((directive: { name: { value: string } }) => directive.name.value === 'upper')
+          const noAuthDirective = directives.find((directive: { name: { value: string } }) => directive.name.value === 'noAuth')
 
-          const result = await next()
-
-          if (splDirective) {
-            const { value } = splDirective.arguments[0]
-
-            let data = splListFilterer.filter_no_variables(
-              value.value,
-              splListFilterer.formatInput(result)
-            )
-            return splListFilterer.formatOutput(data)
+          /**
+           * In order to set headers for the request, we need override authorization headers
+           * an pass it to execute function
+           */
+          if (noAuthDirective) {
+            context = { ...context, headers: { ...context.headers, authorization: '' } }
           }
+          let result = await next(context)
+
 
           if (upperDirective) {
             if (typeof result === 'string') {
-              return result.toUpperCase()
+              result = result.toUpperCase()
             }
-            return result
           }
 
           return result
@@ -41,7 +37,7 @@ export default class DirectivesTransform implements MeshTransform {
 
         fieldConfig.resolve = (source, originalArgs, context, info) => {
           return resolver(
-            () =>
+            (context: unknown) =>
               new Promise((resolve, reject) => {
                 const result = originalResolver(source, originalArgs, context, info)
                 if (result instanceof Error) {

@@ -1,0 +1,11 @@
+serve:
+  port: 4000
+  hostname: "0.0.0.0"
+  cors:
+    origin: "*"
+  fork: 1
+  playground: true
+  playgroundTitle: Console GraphQL Test
+  browser: false
+
+skipSSLValidation: true
