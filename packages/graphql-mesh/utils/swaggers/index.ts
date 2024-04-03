@@ -1,100 +1,17 @@
-import { globSync } from 'glob'
-import { readFileSync } from 'node:fs'
-import type { Catalog, ConfigExtension, Resolvers, Spec, SwaggerName } from './types'
-
-const SWAGGERS: SwaggerName[] = globSync('./specs/**/*.json').sort((a, b) => a.localeCompare(b))
-
-const specsRaw = SWAGGERS.map(
-  (swagger) => <Spec>JSON.parse(readFileSync(swagger, { encoding: 'utf-8' }))
-)
-
-const catalog = specsRaw.reduce((acc, spec, i) => {
-  Object.keys(spec.paths).forEach((path) => {
-    const query = spec.paths[path]?.get
-    const content = query?.responses['200']?.['content']
-    if (content) {
-      const ref = content['application/json']?.schema['$ref'] ?? content['*/*']?.schema['$ref']
-      const schema = ref?.replace('#/components/schemas/', '')
-      if (schema) {
-        acc[path] = [query?.operationId, schema, SWAGGERS[i]]
-      }
-    }
-  })
-  return acc
-}, {} as Catalog)
-
-let interfacesWithChildren = {}
-specsRaw.forEach((s) => {
-  const { schemas } = s.components
-  const entries = Object.entries(schemas).filter(([_, value]) =>
-    Object.keys(value).includes('discriminator')
-  )
-  for (const [schemaKey, schemaValue] of entries) {
-    const mapping = schemaValue['discriminator']['mapping'] ?? {}
-    const mappingTypes = []
-    mappingTypes.push(
-      ...Object.keys(mapping)
-        .filter((k) => k !== schemaKey)
-        .map((k) => mapping[k].replace('#/components/schemas/', ''))
-    )
-    if (interfacesWithChildren[schemaKey] === undefined) {
-      interfacesWithChildren[schemaKey] = mappingTypes
-    } else {
-      mappingTypes.forEach((type) => {
-        if (!interfacesWithChildren[schemaKey].includes(type)) {
-          interfacesWithChildren[schemaKey].push(type)
-        }
-      })
-    }
-  }
-})
-
-const trimLinks = (str: string) => str.replace(/Links$/, '')
-const mergeObjects = (obj1: Resolvers, obj2: Resolvers) => {
-  for (const key in obj2) {
-    if (key in obj1 && typeof obj1[key] === 'object') {
-      obj1[key] = mergeObjects(obj1[key], obj2[key])
-    } else {
-      obj1[key] = obj2[key]
-    }
-  }
-  return obj1
-}
-const getAvailableTypes = (specs: Spec[]) =>
-  specs.flatMap((spec) => Object.keys(spec.components?.schemas ?? {}))
-function anonymizePathAndGetParams(path: string) {
-  const params: string[] = path.match(/\{(.*?)\}/g) ?? []
-
-  return {
-    anonymizedPath: path.replace(/\/(\{[^}]+\})/g, '/{}'),
-    params: params.map((param) => param.replace(/[{}]/g, ''))
-  }
-}
-
-export const sources = SWAGGERS.map((source) => ({
-  name: source,
-  handler: {
-    openapi: {
-      source,
-      endpoint: '{env.ENDPOINT}',
-      ignoreErrorResponses: true,
-      operationHeaders: {
-        Authorization: `{context.headers["authorization"]}`
-      }
-    }
-  }
-}))
-
+import { Spec, ConfigExtension, Resolvers } from '../../types'
+import { trimLinks, anonymizePathAndGetParams } from '../helpers'
 /**
  * This function creates, for a Swagger file, the additional typeDefs for each schema having at least one x-link, and one resolver for each x-link
  * @param swagger, one unique Swagger file
  * @param availableTypes, a list of the types that can be extended via additionalTypeDefs
  * @returns an object with two elements: the additional typeDefs and resolvers of the Swagger file
  */
-function createTypeDefsAndResolversFromOneSwagger(
+export const generateTypeDefsAndResolversFromSwagger = (
   spec: Spec,
-  availableTypes: string[]
-): ConfigExtension {
+  availableTypes: string[],
+  interfacesWithChildren: { [key: string]: string[] },
+  catalog: { [key: string]: [string, string, string] }
+): ConfigExtension => {
   if (!spec.components) {
     return {
       typeDefs: '',
@@ -315,40 +232,5 @@ function createTypeDefsAndResolversFromOneSwagger(
   return { typeDefs, resolvers }
 }
 
-/**
- * This function merges the additional typeDefs and resolvers of each Swagger file into one
- * @param specsList, a list of Swagger files
- * @returns an object with two elements: the merged typeDefs and the merged resolvers
- */
-function createTypeDefsAndResolvers(specs: Spec[]) {
-  const availableTypes = getAvailableTypes(specs)
-  return specs.reduce(
-    (acc, spec) => {
-      const { typeDefs, resolvers } = createTypeDefsAndResolversFromOneSwagger(spec, availableTypes)
-      acc.typeDefs += typeDefs
-      acc.resolvers = mergeObjects(acc.resolvers, resolvers)
-      return acc
-    },
-    { typeDefs: '', resolvers: {} } as ConfigExtension
-  )
-}
-
-const typeDefsAndResolvers = createTypeDefsAndResolvers(specsRaw)
-
-typeDefsAndResolvers.typeDefs += /* GraphQL */ `
-  directive @SPL(query: String) on FIELD
-`
-
-typeDefsAndResolvers.typeDefs += /* GraphQL */ `
-  directive @upper on FIELD
-`
-
-typeDefsAndResolvers.typeDefs += /* GraphQL */ `
-  type LinkItem {
-    rel: String
-    href: String
-  }
-`
-
-export const additionalTypeDefs = typeDefsAndResolvers.typeDefs
-export const resolvers = typeDefsAndResolvers.resolvers
+export const getAvailableTypes = (specs: Spec[]) =>
+  specs.flatMap((spec) => Object.keys(spec.components?.schemas ?? {}))
