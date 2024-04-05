@@ -11,10 +11,11 @@ export default class NoAuthDirectiveTransform implements MeshTransform {
         const originalResolver =
           fieldConfig.resolve != null ? fieldConfig.resolve : defaultFieldResolver
 
-        const resolver = async (next: any , _source: any, _args: any, context: any, info: any) => {
+        const resolver = async (next: any, _source: any, _args: any, context: any, info: any) => {
           const { directives } = info.fieldNodes[0]
-          const upperDirective = directives.find((directive: { name: { value: string } }) => directive.name.value === 'upper')
-          const noAuthDirective = directives.find((directive: { name: { value: string } }) => directive.name.value === 'noAuth')
+          const noAuthDirective = directives.find(
+            (directive: { name: { value: string } }) => directive.name.value === 'noAuth'
+          )
 
           /**
            * In order to set headers for the request, we need override authorization headers
@@ -24,13 +25,6 @@ export default class NoAuthDirectiveTransform implements MeshTransform {
             context = { ...context, headers: { ...context.headers, authorization: '' } }
           }
           let result = await next(context)
-
-
-          if (upperDirective) {
-            if (typeof result === 'string') {
-              result = result.toUpperCase()
-            }
-          }
 
           return result
         }

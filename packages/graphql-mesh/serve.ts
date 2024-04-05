@@ -1,7 +1,7 @@
 import { createServer } from 'node:http'
 import { createBuiltMeshHTTPHandler } from './.mesh'
 import { getConfig } from './utils/config'
-const config = getConfig() || {}
+const config = getConfig()
 
 const PORT = config.serve?.port ?? 4000
 const HOSTNAME = config.serve?.hostname ?? 'http://0.0.0.0'
