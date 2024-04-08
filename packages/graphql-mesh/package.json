@@ -1,5 +1,6 @@
 {
   "scripts": {
+    "build:local:image": "./scripts/build-local-image.sh",
     "build": "npm run downloadswaggers && mesh build",
     "downloadswaggers": "NODE_TLS_REJECT_UNAUTHORIZED='0' sucrase-node ./scripts/download-sources.ts",
     "postinstall": "patch-package",
@@ -18,12 +19,13 @@
     "@graphql-mesh/transform-type-merging": "^0.96.2",
     "@graphql-tools/schema": "^10.0.2",
     "@graphql-tools/utils": "^10.0.12",
-    "glob": "^10.3.10",
-    "graphql": "^16.8.1",
     "directive-headers": "file:./local-pkg/directive-headers-1.0.0.tgz",
     "directive-no-auth": "file:./local-pkg/directive-no-auth-1.0.0.tgz",
-    "patch-package": "^8.0.0",
     "directive-spl": "file:./local-pkg/directive-spl-1.0.0.tgz",
+    "glob": "^10.3.10",
+    "graphql": "^16.8.1",
+    "inject-additional-transforms": "file:./local-pkg/inject-additional-transforms-1.0.0.tgz",
+    "patch-package": "^8.0.0",
     "sucrase": "^3.35.0"
   },
   "devDependencies": {

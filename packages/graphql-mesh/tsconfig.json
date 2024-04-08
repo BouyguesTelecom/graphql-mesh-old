@@ -3,7 +3,7 @@
     "target": "ES2022",
     "module": "NodeNext",
     "sourceMap": true,
-    "outDir": "dist"
+    "outDir": ".mesh"
   },
   "exclude": ["node_modules"]
 }

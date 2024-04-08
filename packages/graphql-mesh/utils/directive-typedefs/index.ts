@@ -9,11 +9,6 @@ export const directiveTypeDefs = /* GraphQL */ `
   """
   directive @noAuth on FIELD
 
-  """
-  This directive is used to convert the result to uppercase.
-  """
-  directive @upper on FIELD
-
   type LinkItem {
     rel: String
     href: String

@@ -1,4 +1,4 @@
-import { Config } from '@graphql-mesh/types/typings/config'
+import { YamlConfig } from '@graphql-mesh/types'
 import { DefaultLogger } from '@graphql-mesh/utils'
 import { load } from 'js-yaml'
 import { readFileSync } from 'node:fs'
@@ -9,9 +9,9 @@ const logger = new DefaultLogger()
  * Load config file from yaml or ts
  * @returns Config
  */
-export const getConfig = (): Config => {
+export const getConfig = (): YamlConfig.Config => {
   logger.info('Loading config file')
-  let config: Config
+  let config: YamlConfig.Config
   // Load yaml config file
   try {
     const configPath = resolve('./config.yaml')
@@ -39,7 +39,10 @@ export const getConfig = (): Config => {
  * @param config
  * @returns
  */
-export const getSourceOpenapiEnpoint = (source: string, config: Config): string | undefined => {
+export const getSourceOpenapiEnpoint = (
+  source: string,
+  config: YamlConfig.Config
+): string | undefined => {
   const data = config.sources?.find((item) =>
     item?.handler?.openapi?.source?.includes(source.split('/').pop())
   )
