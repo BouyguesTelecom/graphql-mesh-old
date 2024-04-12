@@ -17,13 +17,15 @@ const config = <YamlConfig.Config>{
       }
     },
     ...(defaultConfig.transforms || [])
-  ],
+  ].filter(Boolean),
   sources: [...sources],
-  additionalTypeDefs: [defaultConfig.additionalTypeDefs || '', ...additionalTypeDefs],
+  additionalTypeDefs: [defaultConfig.additionalTypeDefs || '', ...additionalTypeDefs].filter(
+    Boolean
+  ),
   additionalResolvers: [
     ...(defaultConfig.additionalResolvers || []),
     './utils/additionalResolvers.ts'
-  ]
+  ].filter(Boolean)
 }
 
 export default config

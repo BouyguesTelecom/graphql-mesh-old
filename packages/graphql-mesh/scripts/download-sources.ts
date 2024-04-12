@@ -11,19 +11,33 @@ const sources = config?.sources?.filter((source) => source?.handler?.openapi) ||
 const swaggers = sources.map((source) => source?.handler?.openapi?.source) || []
 
 /**
+ * Get the name of generated from the source object
+ * @param {Record<string, unknown>} source
+ * @returns {string | undefined}
+ */
+const getFileName = (url: string): string | undefined => {
+  return sources.find((source) => source?.handler?.openapi?.source === url)?.name
+}
+
+/**
  * Download the swagger from the given URL and save it to the sources folder
  * @param {string} url
  */
-const downSwaggerFromUrl = async (url: string): Promise<void> => {
+const downSwaggerFromUrl = async (url: string | undefined, index: string): Promise<void> => {
+  if (!url) return Promise.resolve()
   try {
     const content: Record<string, unknown> = await readFileOrUrl(url, {
       allowUnknownExtensions: true,
       cwd: '.',
       fetch: fetch,
-      importFn: null,
+      importFn: (mod) => import(mod),
       logger: logger
     })
-    const fileName = url.split('/').pop()
+    let fileName = getFileName(url) || `${index}-${url.split('/').pop()}`
+    if (!fileName.endsWith('.json')) {
+      fileName += '.json'
+    }
+
     if (fileName) {
       const filePath = `./sources/${fileName}`
       writeFileSync(filePath, JSON.stringify(content, null, 2), 'utf8')
@@ -37,7 +51,7 @@ const downSwaggerFromUrl = async (url: string): Promise<void> => {
  * Download all the swaggers from the given URLs
  * @param {string[]} swaggers
  */
-const downloadSwaggers = (swaggers: string[]) => {
+const downloadSwaggers = (swaggers: (string | undefined)[]) => {
   logger.info(`Downloading ${swaggers.length} swaggers sources...`)
 
   // Create the sources folder if it doesn't exist
@@ -46,7 +60,7 @@ const downloadSwaggers = (swaggers: string[]) => {
   }
 
   if (swaggers.length) {
-    swaggers.forEach(downSwaggerFromUrl)
+    swaggers.forEach((file, index) => downSwaggerFromUrl(file, index.toString()))
   }
 }
 
