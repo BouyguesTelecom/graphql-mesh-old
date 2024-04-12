@@ -50,3 +50,10 @@ export default class NoAuthDirectiveTransform implements MeshTransform {
     })
   }
 }
+
+export const noAuthDirectiveTypeDef: string = /* GraphQL */ `
+  """
+  This directive is used to disable the authorization header for the request
+  """
+  directive @noAuth on FIELD
+`

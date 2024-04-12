@@ -5,7 +5,6 @@ import { getConfig, getSourceName, getSourceOpenapiEnpoint } from './config'
 import { getAvailableTypes } from './swaggers'
 import { mergeObjects } from './helpers'
 import { generateTypeDefsAndResolversFromSwagger } from './swaggers'
-import { directiveTypeDefs } from './directive-typedefs'
 
 export default class ConfigFromSwaggers {
   swaggers: SwaggerName[] = []
@@ -94,7 +93,7 @@ export default class ConfigFromSwaggers {
             ignoreErrorResponses: true,
             operationHeaders: {
               Authorization: `{context.headers["authorization"]}`,
-              ...(this.config.sources.find((item) => source.includes(item.name))?.handler?.openapi
+              ...(this.config.sources?.find((item) => source.includes(item.name))?.handler?.openapi
                 ?.operationHeaders || {})
             }
           }
@@ -122,7 +121,7 @@ export default class ConfigFromSwaggers {
 
   getMeshConfigFromSwaggers(): {
     defaultConfig: any
-    additionalTypeDefs: string[]
+    additionalTypeDefs: string
     additionalResolvers: any
     sources: any[]
   } {
@@ -130,7 +129,7 @@ export default class ConfigFromSwaggers {
 
     return {
       defaultConfig: this.config,
-      additionalTypeDefs: [typeDefs, directiveTypeDefs].filter(Boolean),
+      additionalTypeDefs: typeDefs,
       additionalResolvers: resolvers,
       sources: [...this.getOpenApiSources(), ...this.getOtherSources()]
     }

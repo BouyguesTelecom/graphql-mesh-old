@@ -56,3 +56,15 @@ export default class HeadersDirectiveTransform implements MeshTransform {
     })
   }
 }
+
+export const headersDirectiveTypeDef: string = /* GraphQL */ `
+  input Header {
+    key: String
+    value: String
+  }
+
+  """
+  This directive is used to add headers to the request.
+  """
+  directive @headers(input: [Header]) on FIELD
+`

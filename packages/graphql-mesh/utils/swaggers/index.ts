@@ -30,7 +30,15 @@ export const generateTypeDefsAndResolversFromSwagger = (
     }
   }
 
+  const linkItemTypeDef = /* GraphQL */ `
+    type LinkItem {
+      rel: String
+      href: String
+    }
+  `
+
   let typeDefs = ''
+  typeDefs += linkItemTypeDef
 
   const resolvers: Resolvers = {}
 

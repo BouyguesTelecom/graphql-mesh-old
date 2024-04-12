@@ -52,3 +52,10 @@ export default class SplDirectiveTransform implements MeshTransform {
     })
   }
 }
+
+export const splDirectiveTypeDef: string = /* GraphQL */ `
+  """
+  This is a very small, lightweight, straightforward and non-evaluated expression language to sort, filter and paginate arrays of maps.
+  """
+  directive @SPL(query: String) on FIELD
+`
