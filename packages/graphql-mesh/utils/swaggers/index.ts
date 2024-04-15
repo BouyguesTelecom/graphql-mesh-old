@@ -1,4 +1,5 @@
 import { Spec, ConfigExtension, Resolvers } from '../../types'
+import { getSourceName } from '../config'
 import { trimLinks, anonymizePathAndGetParams } from '../helpers'
 /**
  * This function creates, for a Swagger file, the additional typeDefs for each schema having at least one x-link, and one resolver for each x-link
@@ -10,7 +11,8 @@ export const generateTypeDefsAndResolversFromSwagger = (
   spec: Spec,
   availableTypes: string[],
   interfacesWithChildren: { [key: string]: string[] },
-  catalog: { [key: string]: [string, string, string] }
+  catalog: { [key: string]: [string, string, string] },
+  config: any
 ): ConfigExtension => {
   if (!spec.components) {
     return {
@@ -93,7 +95,7 @@ export const generateTypeDefsAndResolversFromSwagger = (
 
           const query = targetedOperationName
           const type = targetedOperationType
-          const source = targetedSwaggerName
+          const source = getSourceName(targetedSwaggerName, config)
 
           if (
             targetedOperationType !== 'TYPE_NOT_FOUND' &&
@@ -124,6 +126,7 @@ export const generateTypeDefsAndResolversFromSwagger = (
                   root = { ...root, followLink: hateoasLink.href }
                 }
 
+                // @TODO: Fix type checking for interger params
                 if (paramsToSend.length) {
                   paramsToSend.forEach((param, i) => {
                     args[param] = root[param] || root[paramsFromLink[i]] || ''

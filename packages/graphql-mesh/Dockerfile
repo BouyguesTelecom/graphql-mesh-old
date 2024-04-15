@@ -31,5 +31,6 @@ VOLUME /app/sources
 VOLUME /app/config.yaml
 VOLUME /app/transforms
 VOLUME /app/plugins
+VOLUME /app/resolvers
 
 CMD [ "npm", "run", "serve" ]

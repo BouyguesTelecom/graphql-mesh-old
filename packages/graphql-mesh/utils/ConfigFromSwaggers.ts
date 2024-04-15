@@ -72,7 +72,8 @@ export default class ConfigFromSwaggers {
           spec,
           availableTypes,
           this.getInterfacesWithChildren(),
-          this.catalog
+          this.catalog,
+          this.config
         )
         acc.typeDefs += typeDefs
         acc.resolvers = mergeObjects(acc.resolvers, resolvers)

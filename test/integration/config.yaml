@@ -1,0 +1,27 @@
+sources:
+  - name: Products
+    handler:
+      openapi:
+        source: http://api-products:5000/api-docs/products.yml
+        endpoint: http://api-products:5000
+  - name: Suppliers
+    handler:
+      openapi:
+        source: http://api-products:5000/api-docs/suppliers.yml
+        endpoint: http://api-products:5000
+
+additionalEnvelopPlugins: "./plugins"
+additionalTransforms: [{ "./transforms/index.ts": {} }]
+additionalTypeDefs: |
+  """
+  This directive is used to convert the result to uppercase.
+  """
+  directive @lower on FIELD
+skipSSLValidation: true
+serve:
+  hostname: 0.0.0.0
+  port: 3000
+  cors:
+    origin: "*"
+  playground: true
+  playgroundTitle: Console GraphQL

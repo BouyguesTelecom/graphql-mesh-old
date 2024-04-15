@@ -19,7 +19,6 @@
     "build:cjs": "tsc --project tsconfig-cjs.json",
     "build:esm": "tsc --project tsconfig-esm.json",
     "build": "rm -rf _build && npm run build:esm && npm run build:cjs && node ./scripts/prepare-package-json",
-    "dev": "vite",
     "pack": "npm run build && npm pack --pack-destination ../graphql-mesh/local-pkg",
     "test": "vitest"
   },
