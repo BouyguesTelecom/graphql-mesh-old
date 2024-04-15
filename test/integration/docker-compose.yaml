@@ -4,14 +4,22 @@ services:
     build:
       context: ../api/
       dockerfile: ../api/Dockerfile
-    extra_hosts:
-      - "api-products:172.20.0.2"
+    #image: api-products
     ports:
       - 45537:5000
+    healthcheck:
+      test: curl --fail http://localhost:5000/products || exit 1
+      interval: 10s
+      timeout: 10s
+      retries: 3
     restart: unless-stopped
+
   # <http://localhost:45538/graphql>
   graphql-mesh:
     depends_on:
+      api-products:
+        condition: service_healthy
+    links:
       - api-products
     image: ${IMAGE_TAG:-bouyguestelecom/graphql-mesh:latest}
     environment:

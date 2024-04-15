@@ -19,7 +19,16 @@ app.use('/api-docs/:file', (req, res) => {
 })
 
 // Redirect to the swagger UI
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(Yaml.load('./api-docs/swagger.yml')))
+app.use(
+  '/api-products-docs',
+  swaggerUi.serve,
+  swaggerUi.setup(Yaml.load('./api-docs/products.yml'))
+)
+app.use(
+  '/api-suppliers-docs',
+  swaggerUi.serve,
+  swaggerUi.setup(Yaml.load('./api-docs/suppliers.yml'))
+)
 
 // Serve the products
 app.get('/products', (req, res) => {
