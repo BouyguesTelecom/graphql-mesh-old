@@ -1,7 +1,7 @@
 import { test, expect } from 'vitest'
 import axios from 'axios'
 
-const url = 'http://127.0.0.1:45538/graphql'
+const url = 'http://0.0.0.0:45538/graphql'
 const headers = { 'Content-Type': 'application/json' }
 
 /* Get all products */

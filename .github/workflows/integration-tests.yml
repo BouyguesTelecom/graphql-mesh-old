@@ -9,6 +9,9 @@ on:
 jobs:
   integration-tests:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18.x]
     services:
       registry:
         image: registry:2
@@ -41,3 +44,17 @@ jobs:
 
       - name: Setup services for testing purpose
         run: export IMAGE_TAG=localhost:5000/test/graphql-mesh:latest && cd ./test/integration && docker compose up -d
+
+      - name: Inspect network
+        run: docker network inspect integration_default
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install dependencies
+        run: cd ./test/integration/tests && npm install
+
+      - name: Run tests
+        run: cd ./test/integration/tests && npm test
