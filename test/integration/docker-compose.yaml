@@ -1,0 +1,25 @@
+services:
+  # <http://localhost:45537/api-docs/products.yml>
+  api-products:
+    build:
+      context: ../api/
+      dockerfile: ../api/Dockerfile
+    extra_hosts:
+      - "api-products:172.20.0.2"
+    ports:
+      - 45537:5000
+    restart: unless-stopped
+  # <http://localhost:45538/graphql>
+  graphql-mesh:
+    depends_on:
+      - api-products
+    image: ${IMAGE_TAG:-bouyguestelecom/graphql-mesh:latest}
+    environment:
+      - DEBUG=1
+    ports:
+      - 45538:3000
+    volumes:
+      - ./transforms:/app/transforms
+      - ./plugins:/app/plugins
+      - ./config.yaml:/app/config.yaml
+    restart: unless-stopped
