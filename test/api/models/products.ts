@@ -16,7 +16,7 @@ type Product = {
 function generateProducts() {
   const _products: Product[] = []
   for (let i = 1; i <= 50; i++) {
-    const supplierId = Math.floor(Math.random() * 10) + 1
+    const supplierId = (i % 10) + 1
     const product: Product = {
       id: i,
       name: `Product ${i}`,
