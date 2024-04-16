@@ -126,10 +126,10 @@ export const generateTypeDefsAndResolversFromSwagger = (
                   root = { ...root, followLink: hateoasLink.href }
                 }
 
-                // @TODO: Fix type checking for interger params
                 if (paramsToSend.length) {
                   paramsToSend.forEach((param, i) => {
-                    args[param] = root[param] || root[paramsFromLink[i]] || ''
+                    // To avoid params validation error in case of missing params or type mismatch we set default value to '0'
+                    args[param] = root[param] || root[paramsFromLink[i]] || '0'
                   })
                 }
 

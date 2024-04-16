@@ -45,9 +45,6 @@ jobs:
       - name: Setup services for testing purpose
         run: export IMAGE_TAG=localhost:5000/test/graphql-mesh:latest && cd ./test/integration && docker compose up -d
 
-      - name: Inspect network
-        run: docker network inspect integration_default
-
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
