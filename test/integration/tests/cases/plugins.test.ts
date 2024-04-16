@@ -15,6 +15,8 @@ const getProductById = /* GraphQL */ `
 
 test('Server timing plugin', async () => {
   const response = await axios.post(url, { query: getProductById }, { headers })
+
+  expect(response.data.errors).toBeUndefined()
   const serverTiming = response.headers['server-timing']
   expect(serverTiming).contains('getProductById;desc="getProductById (Products)";dur')
 })

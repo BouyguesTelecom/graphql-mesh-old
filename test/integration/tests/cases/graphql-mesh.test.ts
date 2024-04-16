@@ -22,6 +22,7 @@ test('getAllProducts query', async () => {
   const result = response.data
   expect(response.status).toBe(200)
   expect(result).toHaveProperty('data')
+  expect(result.errors).toBeUndefined()
   expect(result.data).toHaveProperty('getProducts')
   expect(result.data.getProducts.items.length).toEqual(50)
 })
@@ -45,6 +46,7 @@ test('Follow hateoas link to get Suppier info', async () => {
   const response = await axios.post(url, { query: getProductAndSupplierInfo }, { headers })
 
   const result = response.data
+  expect(result.errors).toBeUndefined()
   expect(result.data.getProductById.supplier.name).contains('Supplier 2')
 })
 
@@ -66,6 +68,7 @@ test('Follow hateoas link to get Suppier info', async () => {
   const response = await axios.post(url, { query: getProductwithLinkList }, { headers })
 
   const result = response.data
+  expect(result.errors).toBeUndefined()
   expect(result.data.getProductById._linksList.length).toEqual(2)
   expect(result.data.getProductById._linksList).toEqual([
     {

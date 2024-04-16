@@ -17,6 +17,7 @@ test('Injection lower transform', async () => {
   const response = await axios.post(url, { query: getProductById }, { headers })
 
   const result = response.data
+  expect(result.errors).toBeUndefined()
   expect(result).toHaveProperty('data')
   expect(result.data.getProductById.name).toEqual('product 1')
 })

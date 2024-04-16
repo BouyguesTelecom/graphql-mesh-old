@@ -21,5 +21,6 @@ test('getTenFirstProducts with SPL filter query', async () => {
 
   const result = response.data
   expect(response.status).toBe(200)
+  expect(result.errors).toBeUndefined()
   expect(result.data.getProducts.items.length).toEqual(10)
 })

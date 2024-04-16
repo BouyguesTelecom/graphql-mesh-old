@@ -1,0 +1,35 @@
+services:
+  # <http://localhost:45537/api-docs/products>
+  api-products:
+    image: shubhendumadhukar/camouflage
+    ports:
+      - 45537:8080
+    volumes:
+      - ./camouflage.yaml:/app/config.yml:ro
+      - ./mocks:/app/mocks:ro
+
+    healthcheck:
+      # https://stackoverflow.com/questions/72708667/use-wget-instead-of-curl-for-healthchecks-in-asp-net-core-docker-images
+      test: wget --spider --tries=1 --no-verbose http://localhost:8080/products || exit 1
+      interval: 10s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # <http://localhost:45538/graphql>
+  graphql-mesh:
+    depends_on:
+      api-products:
+        condition: service_healthy
+    links:
+      - api-products
+    image: ${IMAGE_TAG:-graphql-mesh}
+    environment:
+      - DEBUG=1
+    ports:
+      - 45538:3000
+    volumes:
+      - ./transforms:/app/transforms:ro
+      - ./plugins:/app/plugins:ro
+      - ./config.yaml:/app/config.yaml:ro
+    restart: unless-stopped

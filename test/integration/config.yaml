@@ -2,13 +2,13 @@ sources:
   - name: Products
     handler:
       openapi:
-        source: http://api-products:5000/api-docs/products.yml
-        endpoint: http://api-products:5000
+        source: http://api-products:8080/api-docs/products
+        endpoint: http://api-products:8080
   - name: Suppliers
     handler:
       openapi:
-        source: http://api-products:5000/api-docs/suppliers.yml
-        endpoint: http://api-products:5000
+        source: http://api-products:8080/api-docs/suppliers
+        endpoint: http://api-products:8080
 
 additionalEnvelopPlugins: "./plugins"
 additionalTransforms: [{ "./transforms/index.ts": {} }]
