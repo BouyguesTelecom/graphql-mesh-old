@@ -16,7 +16,7 @@ const getTenFirstProductsQuery = /* GraphQL */ `
   }
 `
 
-test('getTenFirstProducts with SPL filter query', async () => {
+test('getTenFirstProductsQuery: test SPL filter inside query', async () => {
   const response = await axios.post(url, { query: getTenFirstProductsQuery }, { headers })
 
   const result = response.data

@@ -13,7 +13,7 @@ const getProductById = /* GraphQL */ `
   }
 `
 
-test('Injection lower transform', async () => {
+test('getProductById:  @lower directive added throw transform', async () => {
   const response = await axios.post(url, { query: getProductById }, { headers })
 
   const result = response.data

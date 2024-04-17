@@ -10,6 +10,12 @@ sources:
         source: http://api-products:8080/api-docs/suppliers
         endpoint: http://api-products:8080
 
+  - name: Authentication
+    handler:
+      openapi:
+        source: http://api-products:8080/api-docs/authenticate
+        endpoint: http://api-products:8080
+
 additionalEnvelopPlugins: "./plugins"
 additionalTransforms: [{ "./transforms/index.ts": {} }]
 additionalTypeDefs: |

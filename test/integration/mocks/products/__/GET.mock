@@ -6,7 +6,6 @@ Content-Type: application/json
 {{#code}}
 ((id) => {
   const supplierId = (parseInt(id) % 10) + 1
-  logger.info(request.params[0].split('/').reverse())
   return {
     status: 200,
     body: JSON.stringify({

@@ -16,7 +16,7 @@ const getAllProductsQuery = /* GraphQL */ `
   }
 `
 
-test('getAllProducts query', async () => {
+test('getAllProductsQuery: query working properly', async () => {
   const response = await axios.post(url, { query: getAllProductsQuery }, { headers })
 
   const result = response.data
@@ -42,7 +42,7 @@ const getProductAndSupplierInfo = /* GraphQL */ `
   }
 `
 
-test('Follow hateoas link to get Suppier info', async () => {
+test('getProductAndSupplierInfo: follow hateoas link', async () => {
   const response = await axios.post(url, { query: getProductAndSupplierInfo }, { headers })
 
   const result = response.data
@@ -64,7 +64,7 @@ const getProductwithLinkList = /* GraphQL */ `
   }
 `
 
-test('Follow hateoas link to get Suppier info', async () => {
+test('getProductAndSupplierInfo: Get "_linksList" attributes', async () => {
   const response = await axios.post(url, { query: getProductwithLinkList }, { headers })
 
   const result = response.data
