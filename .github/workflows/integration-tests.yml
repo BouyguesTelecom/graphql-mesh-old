@@ -45,6 +45,9 @@ jobs:
       - name: Setup services for testing purpose
         run: export IMAGE_TAG=localhost:5000/test/graphql-mesh:latest && cd ./test/integration && docker compose up -d
 
+      - name: Wait for services to be ready
+        run: sleep 30
+
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
