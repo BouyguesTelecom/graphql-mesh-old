@@ -5,8 +5,8 @@ services:
     ports:
       - 45537:8080
     volumes:
-      - ./camouflage.yaml:/app/config.yml:ro
-      - ./mocks:/app/mocks:ro
+      - ../mocks/camouflage.yaml:/app/config.yml:ro
+      - ../mocks:/app/mocks:ro
 
     healthcheck:
       # https://stackoverflow.com/questions/72708667/use-wget-instead-of-curl-for-healthchecks-in-asp-net-core-docker-images
@@ -24,6 +24,12 @@ services:
     links:
       - api-products
     image: ${IMAGE_TAG:-graphql-mesh}
+    # build: ../../packages/graphql-mesh
+    # command: npm run build:local:image
+    # develop:
+    #   watch:
+    #     - action: rebuild
+    #       path: ../../packages/graphql-mesh
     environment:
       - DEBUG=1
     ports:
