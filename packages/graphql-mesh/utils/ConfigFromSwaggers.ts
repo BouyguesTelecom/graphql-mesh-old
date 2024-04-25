@@ -66,6 +66,16 @@ export default class ConfigFromSwaggers {
 
   createTypeDefsAndResolvers() {
     const availableTypes = getAvailableTypes(this.specs)
+    const typeDefs = /* GraphQL */ `
+      type LinkItem {
+        rel: String
+        href: String
+      }
+      type ActionItem {
+        rel: String
+        action: String
+      }
+    `
     return this.specs.reduce(
       (acc, spec) => {
         const { typeDefs, resolvers } = generateTypeDefsAndResolversFromSwagger(
@@ -79,7 +89,7 @@ export default class ConfigFromSwaggers {
         acc.resolvers = mergeObjects(acc.resolvers, resolvers)
         return acc
       },
-      { typeDefs: '', resolvers: {} } as ConfigExtension
+      { typeDefs: typeDefs, resolvers: {} } as ConfigExtension
     )
   }
 
@@ -127,7 +137,6 @@ export default class ConfigFromSwaggers {
     sources: any[]
   } {
     const { typeDefs, resolvers } = this.createTypeDefsAndResolvers()
-
     return {
       defaultConfig: this.config,
       additionalTypeDefs: typeDefs,

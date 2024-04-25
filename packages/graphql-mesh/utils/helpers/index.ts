@@ -17,10 +17,10 @@ export const trimLinks = (str: string) => str.replace(/Links$/, '')
  * @returns
  */
 export const anonymizePathAndGetParams = (path: string) => {
-  const params: string[] = path.match(/\{(.*?)\}/g) ?? []
+  const params: string[] = path?.match(/\{(.*?)\}/g) ?? []
 
   return {
-    anonymizedPath: path.replace(/\/(\{[^}]+\})/g, '/{}'),
+    anonymizedPath: path?.replace(/\/(\{[^}]+\})/g, '/{}'),
     params: params.map((param) => param.replace(/[{}]/g, ''))
   }
 }
