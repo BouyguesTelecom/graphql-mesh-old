@@ -5,7 +5,7 @@ import { fetch } from '@whatwg-node/fetch'
 const logger = new DefaultLogger()
 
 // Load the config file and retrieve the sources with an OpenAPI handler
-let config = getConfig()
+const config = getConfig()
 
 const sources = config?.sources?.filter((source) => source?.handler?.openapi) || []
 const swaggers = sources.map((source) => source?.handler?.openapi?.source) || []
@@ -29,9 +29,9 @@ const downSwaggerFromUrl = async (url: string | undefined, index: string): Promi
     const content: Record<string, unknown> = await readFileOrUrl(url, {
       allowUnknownExtensions: true,
       cwd: '.',
-      fetch: fetch,
+      fetch,
       importFn: (mod) => import(mod),
-      logger: logger
+      logger
     })
     let fileName = getFileName(url) || `${index}-${url.split('/').pop()}`
     if (!fileName.endsWith('.json')) {

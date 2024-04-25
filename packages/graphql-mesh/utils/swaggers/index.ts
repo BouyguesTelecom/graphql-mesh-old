@@ -1,6 +1,8 @@
 import { Spec, ConfigExtension, Resolvers } from '../../types'
 import { getSourceName } from '../config'
 import { trimLinks, anonymizePathAndGetParams } from '../helpers'
+import type { OpenAPIV3 } from 'openapi-types'
+
 /**
  * This function creates, for a Swagger file, the additional typeDefs for each schema having at least one x-link, and one resolver for each x-link
  * @param swagger, one unique Swagger file
@@ -32,19 +34,12 @@ export const generateTypeDefsAndResolversFromSwagger = (
     }
   }
 
-  const linkItemTypeDef = /* GraphQL */ `
-    type LinkItem {
-      rel: String
-      href: String
-    }
-  `
-
   let typeDefs = ''
-  typeDefs += linkItemTypeDef
-
   const resolvers: Resolvers = {}
 
   const isKeyXlink = ([key, _value]) => key === 'x-links'
+
+  let _actionsItems = getActionsItems(schemas)
 
   Object.entries(schemas).forEach(([schemaKey, schemaValue]) => {
     Object.entries(schemaValue)
@@ -62,12 +57,13 @@ export const generateTypeDefsAndResolversFromSwagger = (
           type: string
           hrefPattern: string
         }[] = schema
+
         let targetedSwaggerName = 'SWAGGER_NOT_FOUND'
 
-        let objResolver: object = {}
+        const objResolver: object = {}
         let _linksItems = ''
-        for (let x = 0; x < xLinksList.length; x++) {
-          const xLink = xLinksList[x]
+
+        for (const xLink of xLinksList) {
           const xLinkName = xLink.rel.replaceAll('-', '_').replaceAll(' ', '')
           const xLinkPath = xLink.hrefPattern
           let targetedOperationName = 'NAME_NOT_FOUND'
@@ -94,7 +90,6 @@ export const generateTypeDefsAndResolversFromSwagger = (
           )
 
           const query = targetedOperationName
-          const type = targetedOperationType
           const source = getSourceName(targetedSwaggerName, config)
 
           if (
@@ -110,12 +105,23 @@ export const generateTypeDefsAndResolversFromSwagger = (
               }
             `
             objResolver[xLinkName] = {
-              selectionSet: /* GraphQL */ `
+              selectionSet:
+                _actionsItems !== ''
+                  ? /* GraphQL */ `
                 {
                   _links {
                     ${_linksItems}
                   }
+                  _actions {
+                    ${_actionsItems}
+                  }
                 }
+              `
+                  : /* GraphQL */ ` {
+                _links {
+                  ${_linksItems}
+                }
+              }
               `,
               resolve: (root: any, args: any, context: any, info: any) => {
                 const hateoasLink: any = Object.entries(root._links).find(
@@ -144,6 +150,30 @@ export const generateTypeDefsAndResolversFromSwagger = (
           }
         }
 
+        /** Resolver for _actionsList */
+        if (Object.keys(objResolver).length && _actionsItems !== '') {
+          typeDefs += /* GraphQL */ `_actionsList: [ActionItem]\n`
+          objResolver['_actionsList'] = {
+            selectionSet: /* GraphQL */ `
+              {
+                _actions {
+                  ${_actionsItems}
+                }
+              }
+            `,
+            resolve: (root: any) => {
+              return (
+                Object.keys(root?._actions || {})
+                  .filter((key) => root._actions[key]?.action)
+                  .map((key) => ({
+                    rel: key,
+                    action: root._actions[key]?.action
+                  })) || []
+              )
+            }
+          }
+        }
+
         /** Resolver for _linksList */
         if (Object.keys(objResolver).length) {
           typeDefs += /* GraphQL */ `_linksList: [LinkItem]\n`
@@ -156,7 +186,7 @@ export const generateTypeDefsAndResolversFromSwagger = (
               }
             `,
             resolve: (root: any) => {
-              return Object.keys(root._links)
+              return Object.keys(root?._links || {})
                 .filter((key) => root._links[key]?.href)
                 .map((key) => ({
                   rel: key,
@@ -222,25 +252,49 @@ export const generateTypeDefsAndResolversFromSwagger = (
           resolvers[trimedSchemaKey].__resolveType = (res, _, schema) => {
             if (res.__typename !== undefined) {
               return res.__typename
-            } else {
-              if (schema.parentType._fields[schema.fieldName] !== undefined) {
-                //TODO:
-                return interfacesWithChildren[
-                  schema.parentType._fields[schema.fieldName].type.name
-                ][
-                  interfacesWithChildren[schema.parentType._fields[schema.fieldName].type.name]
-                    .length - 1
-                ]
-              } else {
-                return interfacesWithChildren[schema.fieldName][0]
-              }
             }
+
+            if (schema.parentType._fields[schema.fieldName] !== undefined) {
+              //TODO:
+              return interfacesWithChildren[schema.parentType._fields[schema.fieldName].type.name][
+                interfacesWithChildren[schema.parentType._fields[schema.fieldName].type.name]
+                  .length - 1
+              ]
+            }
+            return interfacesWithChildren[schema.fieldName][0]
           }
         }
       })
   })
 
   return { typeDefs, resolvers }
+}
+
+/**
+ * Return all actions items from swagger schemas
+ * @param schemas
+ * @returns
+ */
+export const getActionsItems = (schemas: OpenAPIV3.ComponentsObject) => {
+  let _actionsItems = ''
+  Object.entries(schemas).forEach(([schemaKey, schemaValue]) => {
+    const actions = schemaValue['x-actions'] || []
+    if (actions.length) {
+      _actionsItems += actions.reduce((acc, item) => {
+        return (
+          acc +
+          /* GraphQL */ `
+            ${item.rel}
+            {
+              action
+            }
+          `
+        )
+      }, '')
+    }
+  })
+
+  return _actionsItems
 }
 
 export const getAvailableTypes = (specs: Spec[]) =>
