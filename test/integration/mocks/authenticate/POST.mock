@@ -1,0 +1,16 @@
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{{#code}}
+((request) => {
+  // logger.info(JSON.stringify(request.headers))
+  console.log(request.headers['authorization'])
+  const supplierId = 1
+  return {
+    status: 200,
+    body: JSON.stringify({
+      "authenticate": request.headers['authorization'] === "Bearer token"
+    }, null, 2)
+  }
+})(request);
+{{/code}}

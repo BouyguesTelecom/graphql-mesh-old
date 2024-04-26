@@ -1,0 +1,21 @@
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{{#code}}
+(() => {
+  const suppliers = []
+  for (let i = 1; i <= 10; i++) {
+    suppliers.push({
+      id: i,
+      name: `Supplier ${i}`
+    })
+  }
+
+  return {
+    status: 200,
+    body: JSON.stringify({
+      "items": suppliers
+    }, null, 2)
+  }
+})();
+{{/code}}

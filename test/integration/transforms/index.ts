@@ -2,7 +2,7 @@ import { defaultFieldResolver, GraphQLSchema } from 'graphql'
 import { MeshTransform } from '@graphql-mesh/types'
 import { MapperKind, mapSchema } from '@graphql-tools/utils'
 
-export default class HeadersDirectiveTransform implements MeshTransform {
+export default class LowerDirectiveTransform implements MeshTransform {
   noWrap = true
 
   transformSchema(schema: GraphQLSchema) {
@@ -13,26 +13,19 @@ export default class HeadersDirectiveTransform implements MeshTransform {
 
         const resolver = async (next: any, _source: any, _args: any, context: any, info: any) => {
           const { directives } = info.fieldNodes[0]
-          const headersDirective = directives.find(
-            (directive: { name: { value: string } }) => directive.name.value === 'headers'
+          const upperDirective = directives.find(
+            (directive: { name: { value: string } }) => directive.name.value === 'lower'
           )
 
-          if (headersDirective) {
-            const { value } = headersDirective.arguments[0]
+          let result = await next(context)
 
-            value?.values?.forEach((item: { fields: [any, any] }) => {
-              const [headerName, headerValue] = item.fields
-              context = {
-                ...context,
-                headers: {
-                  ...context.headers,
-                  [headerName.value.value.toLowerCase()]: headerValue.value.value
-                }
-              }
-            })
+          if (upperDirective) {
+            if (typeof result === 'string') {
+              result = result.toLowerCase()
+            }
           }
 
-          return await next(context)
+          return result
         }
 
         fieldConfig.resolve = (source, originalArgs, context, info) => {
@@ -56,15 +49,3 @@ export default class HeadersDirectiveTransform implements MeshTransform {
     })
   }
 }
-
-export const headersDirectiveTypeDef: string = /* GraphQL */ `
-  input Header {
-    key: String
-    value: String
-  }
-
-  """
-  This directive is used to add headers to the request.
-  """
-  directive @headers(input: [Header]) on FIELD
-`

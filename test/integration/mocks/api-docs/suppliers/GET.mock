@@ -1,0 +1,102 @@
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Suppliers API",
+    "description": "API to manage suppliers with HATEOAS.",
+    "version": "1.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000/"
+    }
+  ],
+  "paths": {
+    "/suppliers": {
+      "get": {
+        "operationId": "getSuppliers",
+        "summary": "List all suppliers",
+        "responses": {
+          "200": {
+            "description": "A list of suppliers with HATEOAS links",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Suppliers"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/suppliers/{id}": {
+      "get": {
+        "operationId": "getSupplierById",
+        "summary": "Get a supplier by ID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "The supplier ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A list of suppliers with HATEOAS links",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Supplier"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Supplier": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "Link": {
+        "type": "object",
+        "required": [
+          "href"
+        ],
+        "properties": {
+          "href": {
+            "type": "string"
+          }
+        }
+      },
+      "Suppliers": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Supplier"
+            }
+          }
+        }
+      }
+    }
+  }
+}

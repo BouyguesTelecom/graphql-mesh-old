@@ -1,0 +1,27 @@
+{{assign name='id' value=(capture from='path' regex='\/products\/(.+)?') }}
+
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{{#code}}
+((id) => {
+  const supplierId = (parseInt(id) % 10) + 1
+  return {
+    status: 200,
+    body: JSON.stringify({
+      "id": 1,
+      "name": `Product ${id}`,
+      "price": `${Math.floor(Math.random() * 100)}`,
+      "supplierId": `${supplierId}`,
+      "_links": {
+        "self": {
+          "href": `/products/${id}`
+        },
+        "supplier": {
+          "href": `/suppliers/${supplierId}`
+        }
+      }
+    }, null, 2)
+  }
+})(request.params[0].split('/').reverse()[0]);
+{{/code}}

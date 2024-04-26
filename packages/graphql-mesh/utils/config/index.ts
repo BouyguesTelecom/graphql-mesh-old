@@ -43,8 +43,17 @@ export const getSourceOpenapiEnpoint = (
   source: string,
   config: YamlConfig.Config
 ): string | undefined => {
-  const data = config.sources?.find((item) =>
-    item?.handler?.openapi?.source?.includes(source.split('/').pop())
-  )
+  const data = config.sources?.find((item) => source.includes(item.name))
   return data?.handler.openapi?.endpoint
+}
+
+/** Get source name from config
+ * @param source {string} - source name
+ * @param config  {YamlConfig.Config} - config  object
+ * @returns {string} - source name
+ *
+ */
+export const getSourceName = (source: string, config: YamlConfig.Config): string => {
+  const data = config.sources?.find((item) => source.includes(item.name))
+  return data?.name || source
 }

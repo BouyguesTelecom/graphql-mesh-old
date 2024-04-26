@@ -1,0 +1,33 @@
+sources:
+  - name: Products
+    handler:
+      openapi:
+        source: http://api-products:8080/api-docs/products
+        endpoint: http://api-products:8080
+  - name: Suppliers
+    handler:
+      openapi:
+        source: http://api-products:8080/api-docs/suppliers
+        endpoint: http://api-products:8080
+
+  - name: Authentication
+    handler:
+      openapi:
+        source: http://api-products:8080/api-docs/authenticate
+        endpoint: http://api-products:8080
+
+additionalEnvelopPlugins: "./plugins"
+additionalTransforms: [{ "./transforms/index.ts": {} }]
+additionalTypeDefs: |
+  """
+  This directive is used to convert the result to uppercase.
+  """
+  directive @lower on FIELD
+skipSSLValidation: true
+serve:
+  hostname: 0.0.0.0
+  port: 3000
+  cors:
+    origin: "*"
+  playground: true
+  playgroundTitle: Console GraphQL

@@ -1,11 +1,10 @@
 import { globSync } from 'glob'
 import { readFileSync } from 'node:fs'
 import { Catalog, Spec, SwaggerName, ConfigExtension } from '../types'
-import { getConfig, getSourceOpenapiEnpoint } from './config'
+import { getConfig, getSourceName, getSourceOpenapiEnpoint } from './config'
 import { getAvailableTypes } from './swaggers'
 import { mergeObjects } from './helpers'
 import { generateTypeDefsAndResolversFromSwagger } from './swaggers'
-import { directiveTypeDefs } from './directive-typedefs'
 
 export default class ConfigFromSwaggers {
   swaggers: SwaggerName[] = []
@@ -28,7 +27,7 @@ export default class ConfigFromSwaggers {
           content?.['application/json']?.schema['$ref'] ?? content?.['*/*']?.schema['$ref']
         const schema = ref?.replace('#/components/schemas/', '')
         if (schema) {
-          acc[path] = [query?.operationId, schema, this.swaggers[i]]
+          acc[path] = [query?.operationId || '', schema, this.swaggers[i]]
         }
       })
       return acc
@@ -37,18 +36,20 @@ export default class ConfigFromSwaggers {
 
   getInterfacesWithChildren() {
     this.specs.forEach((s) => {
-      const { schemas } = s.components
-      const entries = Object.entries(schemas).filter(([_, value]) =>
+      const { schemas } = s.components || {}
+      const entries = Object.entries(schemas || {}).filter(([_, value]) =>
         Object.keys(value).includes('discriminator')
       )
       for (const [schemaKey, schemaValue] of entries) {
-        const mapping = schemaValue['discriminator']['mapping'] ?? {}
-        const mappingTypes = []
-        mappingTypes.push(
-          ...Object.keys(mapping)
-            .filter((k) => k !== schemaKey)
-            .map((k) => mapping[k].replace('#/components/schemas/', ''))
-        )
+        const mapping: { [key: string]: string } = schemaValue['discriminator']['mapping'] ?? {}
+        const mappingTypes: string[] = []
+        if (Object.keys(mapping).length > 0) {
+          mappingTypes.push(
+            ...Object.keys(mapping)
+              .filter((k) => k !== schemaKey)
+              .map((k) => mapping[k].replace('#/components/schemas/', ''))
+          )
+        }
         if (this.interfacesWithChildren[schemaKey] === undefined) {
           this.interfacesWithChildren[schemaKey] = mappingTypes
         } else {
@@ -71,7 +72,8 @@ export default class ConfigFromSwaggers {
           spec,
           availableTypes,
           this.getInterfacesWithChildren(),
-          this.catalog
+          this.catalog,
+          this.config
         )
         acc.typeDefs += typeDefs
         acc.resolvers = mergeObjects(acc.resolvers, resolvers)
@@ -84,14 +86,16 @@ export default class ConfigFromSwaggers {
   getOpenApiSources() {
     return (
       this.swaggers.map((source) => ({
-        name: source,
+        name: getSourceName(source, this.config),
         handler: {
           openapi: {
             source,
             endpoint: getSourceOpenapiEnpoint(source, this.config) || '{env.ENDPOINT}',
             ignoreErrorResponses: true,
             operationHeaders: {
-              Authorization: `{context.headers["authorization"]}`
+              Authorization: `{context.headers["authorization"]}`,
+              ...(this.config.sources?.find((item) => source.includes(item.name))?.handler?.openapi
+                ?.operationHeaders || {})
             }
           }
         }
@@ -118,7 +122,7 @@ export default class ConfigFromSwaggers {
 
   getMeshConfigFromSwaggers(): {
     defaultConfig: any
-    additionalTypeDefs: string[]
+    additionalTypeDefs: string
     additionalResolvers: any
     sources: any[]
   } {
@@ -126,7 +130,7 @@ export default class ConfigFromSwaggers {
 
     return {
       defaultConfig: this.config,
-      additionalTypeDefs: [typeDefs, directiveTypeDefs],
+      additionalTypeDefs: typeDefs,
       additionalResolvers: resolvers,
       sources: [...this.getOpenApiSources(), ...this.getOtherSources()]
     }

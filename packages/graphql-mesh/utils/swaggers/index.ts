@@ -1,4 +1,5 @@
 import { Spec, ConfigExtension, Resolvers } from '../../types'
+import { getSourceName } from '../config'
 import { trimLinks, anonymizePathAndGetParams } from '../helpers'
 /**
  * This function creates, for a Swagger file, the additional typeDefs for each schema having at least one x-link, and one resolver for each x-link
@@ -10,7 +11,8 @@ export const generateTypeDefsAndResolversFromSwagger = (
   spec: Spec,
   availableTypes: string[],
   interfacesWithChildren: { [key: string]: string[] },
-  catalog: { [key: string]: [string, string, string] }
+  catalog: { [key: string]: [string, string, string] },
+  config: any
 ): ConfigExtension => {
   if (!spec.components) {
     return {
@@ -30,7 +32,15 @@ export const generateTypeDefsAndResolversFromSwagger = (
     }
   }
 
+  const linkItemTypeDef = /* GraphQL */ `
+    type LinkItem {
+      rel: String
+      href: String
+    }
+  `
+
   let typeDefs = ''
+  typeDefs += linkItemTypeDef
 
   const resolvers: Resolvers = {}
 
@@ -85,7 +95,7 @@ export const generateTypeDefsAndResolversFromSwagger = (
 
           const query = targetedOperationName
           const type = targetedOperationType
-          const source = targetedSwaggerName
+          const source = getSourceName(targetedSwaggerName, config)
 
           if (
             targetedOperationType !== 'TYPE_NOT_FOUND' &&
@@ -118,7 +128,8 @@ export const generateTypeDefsAndResolversFromSwagger = (
 
                 if (paramsToSend.length) {
                   paramsToSend.forEach((param, i) => {
-                    args[param] = root[param] || root[paramsFromLink[i]] || ''
+                    // To avoid params validation error in case of missing params or type mismatch we set default value to '0'
+                    args[param] = root[param] || root[paramsFromLink[i]] || '0'
                   })
                 }
 
