@@ -70,6 +70,9 @@ Content-Type: application/json
           "_links": {
             "$ref": "#/components/schemas/ProductLinks"
           },
+          "_actions": {
+            "$ref": "#/components/schemas/ProductActions"
+          },
           "id": {
             "type": "integer"
           },
@@ -109,7 +112,37 @@ Content-Type: application/json
           }
         ]
       },
+      "ProductActions": {
+        "type": "object",
+        "required": [
+          "update",
+          "delete"
+        ],
+        "properties": {
+          "update": {
+            "$ref": "#/components/schemas/Action"
+          },
+          "delete": {
+            "$ref": "#/components/schemas/Action"
+          }
+        },
+        "x-actions": [
+          {
+            "rel": "update",
+            "type": "application/json",
+            "method": "PATCH",
+            "actionPattern": "/products/add/{id}"
+          },
+          {
+            "rel": "delete",
+            "type": "application/json",
+            "method": "DELETE",
+            "actionPattern": "/products/delete/{id}"
+          }
+        ]
+      },
       "Products": {
+        "description": "HATEOAS link",
         "type": "object",
         "properties": {
           "items": {
@@ -128,6 +161,34 @@ Content-Type: application/json
         "properties": {
           "href": {
             "type": "string"
+          }
+        }
+      },
+      "Action": {
+        "description": "HATEOAS action",
+        "type": "object",
+        "required": [
+          "action",
+          "method"
+        ],
+        "properties": {
+          "type": {
+            "description": "Mime type (ex : application/json)",
+            "type": "string"
+          },
+          "action": {
+            "description": "URL à parcourir",
+            "type": "string"
+          },
+          "method": {
+            "description": "Verbe pour appeler l'URL",
+            "type": "string",
+            "enum": [
+              "PUT",
+              "POST",
+              "DELETE",
+              "PATCH"
+            ]
           }
         }
       }

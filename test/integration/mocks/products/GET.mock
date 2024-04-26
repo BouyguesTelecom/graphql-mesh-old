@@ -18,6 +18,18 @@ Content-Type: application/json
         supplier: {
           href: `/suppliers/${supplierId}`
         }
+      },
+      _actions: {
+        update: {
+          type: 'application/json',
+          action: `/products/add/${i}`,
+          method: 'PATCH'
+        },
+        delete: {
+          type: 'application/json',
+          action: `/products/delete/${i}`,
+          method: 'DELETE'
+        }
       }
     })
   }
