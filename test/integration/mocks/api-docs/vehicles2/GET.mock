@@ -1,0 +1,65 @@
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Conflict API",
+    "description": "API to test the merging of objects and interfaces.",
+    "version": "1.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000/"
+    }
+  ],
+  "paths": {
+    "/vehicles2": {
+      "get": {
+        "operationId": "getVehicles2",
+        "summary": "This operation is never used",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Vehicles"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Vehicle": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "type": {
+            "type": "string"
+          },
+          "numberOfWheels": {
+            "type": "integer"
+          }
+        }
+      },
+      "Vehicles": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Vehicle"
+            }
+          }
+        }
+      }
+    }
+  }
+}

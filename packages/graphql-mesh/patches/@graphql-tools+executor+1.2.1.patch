@@ -1,0 +1,29 @@
+diff --git a/node_modules/@graphql-tools/executor/cjs/execution/execute.js b/node_modules/@graphql-tools/executor/cjs/execution/execute.js
+index 791e3df..0da9ca3 100644
+--- a/node_modules/@graphql-tools/executor/cjs/execution/execute.js
++++ b/node_modules/@graphql-tools/executor/cjs/execution/execute.js
+@@ -418,7 +418,7 @@ function completeValue(exeContext, returnType, fieldNodes, info, path, result, a
+     if ((0, graphql_1.isNonNullType)(returnType)) {
+         const completed = completeValue(exeContext, returnType.ofType, fieldNodes, info, path, result, asyncPayloadRecord);
+         if (completed === null) {
+-            throw new Error(`Cannot return null for non-nullable field ${info.parentType.name}.${info.fieldName}.`);
++            console.error(`Cannot return null for non-nullable field ${info.parentType.name}.${info.fieldName}.`);
+         }
+         return completed;
+     }
+@@ -640,6 +640,15 @@ function ensureValidRuntimeType(runtimeTypeName, exeContext, returnType, fieldNo
+         throw (0, utils_1.createGraphQLError)(`Abstract type "${returnType.name}" must resolve to an Object type at runtime for field "${info.parentType.name}.${info.fieldName}" with ` +
+             `value ${(0, utils_1.inspect)(result)}, received "${(0, utils_1.inspect)(runtimeTypeName)}".`);
+     }
++    /**
++     * TODO: add resolvers for discriminator directives
++     * A simple discriminator directive can look like this: @discriminator(field: "_type", mapping: "{\"FOO\":\"Foo\"}").
++     * We except GraphQL Mesh to transform our runtime type from "FOO" to "Foo" in this case, but it doesn't happen.
++     * Therefore we need this temporary fix.
++     */
++    if (runtimeTypeName === runtimeTypeName.toUpperCase()) {
++        runtimeTypeName = runtimeTypeName.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join('')
++    }
+     const runtimeType = exeContext.schema.getType(runtimeTypeName);
+     if (runtimeType == null) {
+         throw (0, utils_1.createGraphQLError)(`Abstract type "${returnType.name}" was resolved to a type "${runtimeTypeName}" that does not exist inside the schema.`, { nodes: fieldNodes });

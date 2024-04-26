@@ -1,251 +1,51 @@
 diff --git a/node_modules/@graphql-tools/stitch/cjs/typeCandidates.js b/node_modules/@graphql-tools/stitch/cjs/typeCandidates.js
-index c915942..53e83f4 100644
+index c915942..b8e799d 100644
 --- a/node_modules/@graphql-tools/stitch/cjs/typeCandidates.js
 +++ b/node_modules/@graphql-tools/stitch/cjs/typeCandidates.js
-@@ -119,6 +119,192 @@ function buildTypes({ typeCandidates, directives, stitchingInfo, rootTypeNames,
+@@ -119,6 +119,24 @@ function buildTypes({ typeCandidates, directives, stitchingInfo, rootTypeNames,
              (typeof mergeTypes === 'function' && mergeTypes(typeCandidates[typeName], typeName)) ||
              (Array.isArray(mergeTypes) && mergeTypes.includes(typeName)) ||
              (stitchingInfo != null && typeName in stitchingInfo.mergedTypes)) {
 +
-+              /**
-+               * When using a high number of datasources, it is common to encounter
-+               * conflicts between entities. For example, a "Person" entity can be
-+               * defined as an object in a first datasource, and then as an interface
-+               * in a second one.
-+               *
-+               * GraphQL Mesh is designed, by default, to only merge entities of the
-+               * same type, and to throw an error when encountering a conflict.
-+               *
-+               * The following patch tries to resolve these conflicts as much as
-+               * possible.
-+               */
-+              function trimTypeName(str) {
-+                return str.replace("GraphQL", "").replace("Type", "")
-+              }
++              // Custom Object-Interface stitching
 +              const candidates = typeCandidates[typeName].sort((a, b) => a.subschema.name.localeCompare(b.subschema.name));
 +              let initialCandidateType = candidates[0].type;
 +              if (candidates.some(candidate => candidate.type.constructor !== initialCandidateType.constructor)) {
 +                const candidatesI = candidates.filter((c) => c.type.constructor.name === "GraphQLInterfaceType");
 +                const candidatesObj  = candidates.filter((c) => c.type.constructor.name === "GraphQLObjectType");
-+                /**
-+                 * Merging Objects and Interfaces
-+                 *
-+                 * Interfaces and objects are really similar by definition. This part of the
-+                 * patch handles custom stitchings between interfaces and objects.
-+                 *
-+                 * (a) Merges mappings
-+                 * Each interface has a "mapping" attribute, which is one of the two
-+                 * arguments needed for the discriminator directive. It is used to ensure
-+                 * that the runtime type matches the built schema type.
-+                 *
-+                 * (b) Merges fields
-+                 */
++                
 +                if (candidatesI.length + candidatesObj.length === candidates.length) {
 +                  let finalI = candidatesI[0];
-+                  let finalMappings = [];
-+                  // (a)
-+                  candidatesI.forEach((candidateI) => {
-+                    candidateI.type.astNode.directives.forEach((directive) => {
-+                      if (directive.name.value === "discriminator") {
-+                        const mapping = directive.arguments.find(arg => arg.name.value === "mapping")?.value.value;
-+                        if (mapping !== undefined) {
-+                          const splitAndFormatMapping = mapping.split(",")
-+                          .map(split => split.replace("{","").replace("}","")
-+                            .replace(/"([a-zA-Z]+)":"([a-zA-Z]+)"/g, function(str, p1, p2) {
-+                              return '"' + p1.toUpperCase() + '":"' + p2.charAt(0).toUpperCase() + p2.slice(1) + '"';
-+                            })
-+                          );
-+                          splitAndFormatMapping.forEach((splitMapping) => {
-+                            if (!finalMappings.includes(splitMapping)) {
-+                              finalMappings.push(splitMapping);
-+                            }
-+                          });
-+                        }
-+                      }
-+                    })
-+                  });
-+                  finalI.type.astNode.directives.forEach((directive) => {
-+                    if (directive.name.value === "discriminator") {
-+                      directive.arguments.forEach((argument) => {
-+                        if (argument.name.value === "mapping") {
-+                          argument.value.value = `{${finalMappings.join(",")}}`;
-+                        }
-+                      });
-+                    }
-+                  });
-+                  // (b)
 +                  const otherCandidates = candidatesI.slice(1,candidatesI.length).concat(candidatesObj);
 +                  otherCandidates.forEach((otherCandidate) => {
 +                    finalI.type._fields = {...finalI.type._fields, ...otherCandidate.type._fields};
 +                  });
 +                  typeCandidates[typeName] = [finalI];
 +                }
-+                /**
-+                 * When Merging Is Not Possible
-+                 *
-+                 * Instead of throwing the default error when a conflict between entities that
-+                 * have the same name but different types is encountered, we can create
-+                 * distinct entities by appending each base name with its type (except if this
-+                 * type is "Object" or "Interface").
-+                 *
-+                 * Example:
-+                 * If we have two "Address" entities, one being a scalar and the other
-+                 * one being an object, we will create two distinct entities: "Address_Scalar"
-+                 * and "Address" because these entities cannot be merged (instead of throwing
-+                 * an error).
-+                 *
-+                 * (a) Appends existing type names
-+                 *
-+                 * (b) Creates new candidates for each type
-+                 *
-+                 * (c) Deletes original candidates and add new ones
-+                 */
-+                else {
-+                  // (a)
-+                  candidates.forEach((candidate) => {
-+                    const candidateType = trimTypeName(candidate.type.constructor.name);
-+                    if (candidateType !== "Interface" && candidateType !== "Object") {
-+                      candidate.type.name += "_" + candidateType;
-+                      candidate.type.astNode.name.value += "_" + candidateType;
-+                    }
-+                  })
-+                  // (b)
-+                  let newCandidates = {};
-+                  candidates.forEach((candidate) => {
-+                    if (newCandidates[candidate.type.name] === undefined) {
-+                      newCandidates[candidate.type.name] = [candidate];
-+                    }
-+                    else {
-+                      newCandidates[candidate.type.name].push(candidate);
-+                    }
-+                  });
-+                  // (c)
-+                  delete typeCandidates[typeName];
-+                  typeCandidates = {...typeCandidates, ...newCandidates};
-+                  continue;
-+                }
-+              }
-+              /**
-+               * Merging Properties
-+               *
-+               * When trying to merge object entities sharing the same name, the merging issues
-+               * encounterd above can also happen with the properties.
-+               *
-+               * The following part of the patch implements a custom stiching for the object entities.
-+               *
-+               * (a) Merges fields
-+               *
-+               * (b) Merges interfaces
-+               */
-+              initialCandidateType = typeCandidates[typeName][0].type;
-+              if (initialCandidateType.constructor.name === "GraphQLObjectType" || initialCandidateType.constructor.name === "GraphQLInputObjectType") {
-+                let finalObj = candidates[0];
-+                const otherCandidates = candidates.slice(1,candidates.length);
-+                let iList = [];
-+                finalObj.type.astNode.interfaces?.forEach((i) => {
-+                  iList.push(i.name.value);
-+                });
-+                // (a)
-+                otherCandidates.forEach((otherCandidate) => {
-+                  Object.keys(otherCandidate.type._fields).forEach((field) => {
-+                    if (!Object.keys(finalObj.type._fields).includes(field)) {
-+                      finalObj.type._fields[field] = otherCandidate.type._fields[field];
-+                    }
-+                    else {
-+                      const finalObjFieldConstructor = finalObj.type._fields[field].type.constructor;
-+                      const otherCandidateFieldConstructor = otherCandidate.type._fields[field].type.constructor;
-+                      if (finalObjFieldConstructor !== otherCandidateFieldConstructor) {
-+                        if (otherCandidateFieldConstructor.name === "GraphQLNonNull") {
-+                          otherCandidate.type._fields[field] = finalObj.type._fields[field];
-+                        }
-+                        else if (finalObjFieldConstructor.name !== "GraphQLNonNull") {
-+                          if (finalObjFieldConstructor.name === "GraphQLObjectType") {
-+                            const newFieldName = otherCandidate.type._fields[field].name + "_" + trimTypeName(otherCandidateFieldConstructor.name);
-+                            if (trimTypeName(otherCandidateFieldConstructor.name) !== "Interface") {
-+                              finalObj.type._fields[newFieldName] = otherCandidate.type._fields[field];
-+                            }
-+                          }
-+                          else if (otherCandidateFieldConstructor.name === "GraphQLObjectType") {
-+                            const newFieldName = finalObj.type._fields[field].name + "_" + trimTypeName(finalObjFieldConstructor.name);
-+                            finalObj.type._fields[newFieldName] = finalObj.type._fields[field];
-+                            finalObj.type._fields[field] = otherCandidate.type._fields[field];
-+                          }
-+                          else {
-+                            const newFieldA = finalObj.type._fields[field].name + "_" + trimTypeName(finalObjFieldConstructor.name);
-+                            const newFieldB = otherCandidate.type._fields[field].name + "_" + trimTypeName(otherCandidateFieldConstructor.name);
-+
-+                            finalObj.type._fields[newFieldA] = finalObj.type._fields[field];
-+                            finalObj.type._fields[newFieldB] = otherCandidate.type._fields[field];
-+                          }
-+                        }
-+                      }
-+                    }
-+                  });
-+                  // (b)
-+                  otherCandidate.type.astNode.interfaces?.forEach((i) => {
-+                    if (!iList.includes(i.name.value)) {
-+                      finalObj.type.astNode.interfaces.push(i);
-+                      iList.push(i.name.value);
-+                    }
-+                  });
-+                });
-+                typeCandidates[typeName] = [finalObj];
 +              }
 +
              typeMap[typeName] = (0, mergeCandidates_js_1.mergeCandidates)(typeName, typeCandidates[typeName], typeMergingOptions);
          }
          else {
-@@ -128,6 +314,58 @@ function buildTypes({ typeCandidates, directives, stitchingInfo, rootTypeNames,
+@@ -128,6 +146,26 @@ function buildTypes({ typeCandidates, directives, stitchingInfo, rootTypeNames,
              typeMap[typeName] = candidateSelector(typeCandidates[typeName]).type;
          }
      }
 +
 +    /**
-+     * Conflict When Objects Implement Interfaces
-+     *
-+     * (a) Gets the parent fields
-+     * Sometimes, an object needs to have every propreties of its parent
-+     * (when the allOf key is used). Because interfaces have been modified
-+     * earlier in the patch, this statement is sometimes not true anymore.
-+     *
-+     * (b) Resolves issues when an object implements more than 1 interface
-+     * Example:
-+     * An object "Plane" implements two interfaces: "Vehicle" and "Transporter".
-+     * If "Vehicle" has a "wheel" property of type string and "Transporter" has
-+     * also a "wheel" property but of type "boolean", then the "wheel" property
-+     * of the "Plane" object can neither be of type "string" or "boolean".
++     * When the "allOf" key is used, an object needs to have every propreties 
++     * of its parent. Because interfaces have been possibly merged earlier in
++     * the patch, this statement is sometimes not true anymore.
 +     */
 +    Object.values(typeMap).forEach((type) => {
 +      if (type.constructor.name === "GraphQLObjectType") {
-+        if (type._interfaces !== undefined) {
++        if (type.astNode.interfaces.length !== 0) {
 +          type._interfaces = [];
-+          let seenFields = [];
-+          let seenFieldsWithType = [];
 +          type.astNode.interfaces.forEach((i) => {
 +            const iName = i.name.value;
 +            const iFields = typeMap[iName].getFields();
 +            type._interfaces.push(typeMap[iName]);
-+            // (a)
 +            type.setFields(iFields);
-+            // (b)
-+            Object.keys(iFields).forEach((field) => {
-+              if (!seenFields.includes(field)) {
-+                seenFields.push(field);
-+                seenFieldsWithType.push([field, iFields[field].type.constructor.name, iFields[field]]);
-+              }
-+              else {
-+                if (iFields[field].type.constructor.name !== seenFieldsWithType.find(fieldWithType => fieldWithType[0] === field)[1]) {
-+                  typeMap[iName].overwriteField(field, seenFieldsWithType.find(fieldWithType => fieldWithType[0] === field)[2]);
-+                  typeMap[type.name].overwriteField(field, seenFieldsWithType.find(fieldWithType => fieldWithType[0] === field)[2]);
-+                  const new_links = typeMap[type.name].getFields()["_links"];
-+                  const new_actions = typeMap[type.name].getFields()["_actions"];
-+                  new_links.type.name = "MergedLinks";
-+                  new_actions.type.name = "MergedActions";
-+                  typeMap[type.name].overwriteField("_links", new_links);
-+                  typeMap[type.name].overwriteField("_actions", new_actions);
-+                }
-+              }
-+            });
 +          });
 +        }
 +      }

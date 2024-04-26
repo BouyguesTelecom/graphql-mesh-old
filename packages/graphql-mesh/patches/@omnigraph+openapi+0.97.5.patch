@@ -1,48 +1,13 @@
 diff --git a/node_modules/@omnigraph/openapi/cjs/getJSONSchemaOptionsFromOpenAPIOptions.js b/node_modules/@omnigraph/openapi/cjs/getJSONSchemaOptionsFromOpenAPIOptions.js
-index e815992..7d464a4 100644
+index e815992..9084b8f 100644
 --- a/node_modules/@omnigraph/openapi/cjs/getJSONSchemaOptionsFromOpenAPIOptions.js
 +++ b/node_modules/@omnigraph/openapi/cjs/getJSONSchemaOptionsFromOpenAPIOptions.js
-@@ -31,6 +31,43 @@ async function getJSONSchemaOptionsFromOpenAPIOptions(name, { source, fallbackFo
-             readFileOrUrl: readFileOrUrlForJsonMachete,
-             debugLogFn: logger.debug.bind(logger),
-         }));
-+        /**
-+         * In some swagger specifications, 204 and 304 responses have empty "content" values.
-+         * This is not accepted by the OAS, which expects no "content" key for these types of responses.
-+         * Therefore, we have to delete them.
-+         */
-+        for (let path in oasOrSwagger.paths) {
-+            for (let method in oasOrSwagger.paths[path]) {
-+                const methodValue = oasOrSwagger.paths[path][method];
-+                for (let property in methodValue) {
-+                    if (property === "responses") {
-+                        for (let response in methodValue.responses) {
-+                            if (response === "204" || response === "304") {
-+                                delete methodValue.responses[response].content;
-+                            }
-+                        }
-+                    }
-+                }
-+            }
-+        }
-+        /**
-+         * In some swagger specifications, some schemas of object type don't have a "property" key.
-+         * This is not accepeted by the OAS.
-+         * Therefore, we have to add one dummy property in this case.
-+         */
-+        for (let schemaKey in oasOrSwagger.components?.schemas) {
-+            try {
-+                if (!JSON.stringify(oasOrSwagger.components?.schemas[schemaKey]).includes('"properties"') &&
-+                oasOrSwagger.components?.schemas[schemaKey].type === "object") {
-+                    oasOrSwagger.components.schemas[schemaKey]["properties"] = {
-+                        "_null": {
-+                            "description": "",
-+                            "type": "string"
-+                        }
-+                    }
-+                }
-+            } catch {}
-+        }
-     }
-     else {
-         oasOrSwagger = await (0, json_machete_1.dereferenceObject)(source, {
+@@ -278,7 +278,7 @@ async function getJSONSchemaOptionsFromOpenAPIOptions(name, { source, fallbackFo
+                     operationConfig.headers = operationConfig.headers || {};
+                     operationConfig.headers.Accept = methodObj.produces.join(', ');
+                 }
+-                if ('content' in responseObj) {
++                if ('content' in responseObj && Object.keys(responseObj.content).length !== 0) {
+                     const responseObjForStatusCode = {
+                         oneOf: [],
+                     };

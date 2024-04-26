@@ -15,7 +15,6 @@ const getAllProductsQuery = /* GraphQL */ `
     }
   }
 `
-
 test('getAllProductsQuery: query working properly', async () => {
   const response = await axios.post(url, { query: getAllProductsQuery }, { headers })
 
@@ -41,7 +40,6 @@ const getProductAndSupplierInfo = /* GraphQL */ `
     }
   }
 `
-
 test('getProductAndSupplierInfo: follow hateoas link', async () => {
   const response = await axios.post(url, { query: getProductAndSupplierInfo }, { headers })
 
@@ -51,7 +49,6 @@ test('getProductAndSupplierInfo: follow hateoas link', async () => {
 })
 
 /* Linklist property */
-
 const getProductwithLinkList = /* GraphQL */ `
   query getProductWithLinkList {
     getProductById(id: 1) {
@@ -112,4 +109,33 @@ test('getProductwithActionList: Get "_linksList" attributes', async () => {
       action: '/products/delete/1'
     }
   ])
+})
+
+/* Interface-Object merging */
+const getVehicles = /* GraphQL */ `
+  query getVehicles {
+    getVehicles {
+      items {
+        brand
+        numberOfWheels
+        ... on Car {
+          fuelType
+          numberOfWheels
+        }
+        ... on Bike {
+          bikeType
+          numberOfWheels
+        }
+      }
+    }
+  }
+`
+test('getVehicles: merge interfaces and objects properly', async () => {
+  const response = await axios.post(url, { query: getVehicles }, { headers })
+
+  const result = response.data
+  expect(response.status).toBe(200)
+  expect(result).toHaveProperty('data')
+  expect(result.errors).toBeUndefined()
+  expect(result.data.getVehicles.items.length).toEqual(3)
 })
