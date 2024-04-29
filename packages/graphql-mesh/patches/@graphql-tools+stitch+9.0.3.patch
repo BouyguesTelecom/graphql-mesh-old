@@ -1,54 +1,85 @@
+diff --git a/node_modules/@graphql-tools/stitch/cjs/mergeValidations.js b/node_modules/@graphql-tools/stitch/cjs/mergeValidations.js
+index 5e752ad..3b487f5 100644
+--- a/node_modules/@graphql-tools/stitch/cjs/mergeValidations.js
++++ b/node_modules/@graphql-tools/stitch/cjs/mergeValidations.js
+@@ -85,7 +85,7 @@ function validateTypeConsistency(finalElementConfig, candidates, definitionType,
+     const finalIsList = hasListType(finalElementConfig.type);
+     for (const c of candidates) {
+         if (finalIsList !== hasListType(c.type)) {
+-            throw new Error(`Definitions of ${definitionType} "${settingNamespace}" implement inconsistent list types across subschemas and cannot be merged.`);
++            candidates = candidates.filter((c) => c.type.constructor.name === "GraphQLList");
+         }
+         const currentNamedType = (0, graphql_1.getNamedType)(c.type);
+         if (finalNamedType.toString() !== currentNamedType.toString()) {
 diff --git a/node_modules/@graphql-tools/stitch/cjs/typeCandidates.js b/node_modules/@graphql-tools/stitch/cjs/typeCandidates.js
-index c915942..b8e799d 100644
+index c915942..95cd2be 100644
 --- a/node_modules/@graphql-tools/stitch/cjs/typeCandidates.js
 +++ b/node_modules/@graphql-tools/stitch/cjs/typeCandidates.js
-@@ -119,6 +119,24 @@ function buildTypes({ typeCandidates, directives, stitchingInfo, rootTypeNames,
+@@ -119,6 +119,26 @@ function buildTypes({ typeCandidates, directives, stitchingInfo, rootTypeNames,
              (typeof mergeTypes === 'function' && mergeTypes(typeCandidates[typeName], typeName)) ||
              (Array.isArray(mergeTypes) && mergeTypes.includes(typeName)) ||
              (stitchingInfo != null && typeName in stitchingInfo.mergedTypes)) {
 +
-+              // Custom Object-Interface stitching
-+              const candidates = typeCandidates[typeName].sort((a, b) => a.subschema.name.localeCompare(b.subschema.name));
-+              let initialCandidateType = candidates[0].type;
-+              if (candidates.some(candidate => candidate.type.constructor !== initialCandidateType.constructor)) {
++            // Custom Object-Interface stitching
++            const candidates = typeCandidates[typeName].sort((a, b) => a.subschema.name.localeCompare(b.subschema.name));
++            if (candidates.some(candidate => candidate.type.constructor !== candidates[0].type.constructor)) {
 +                const candidatesI = candidates.filter((c) => c.type.constructor.name === "GraphQLInterfaceType");
-+                const candidatesObj  = candidates.filter((c) => c.type.constructor.name === "GraphQLObjectType");
-+                
++                const candidatesObj = candidates.filter((c) => c.type.constructor.name === "GraphQLObjectType");
++
 +                if (candidatesI.length + candidatesObj.length === candidates.length) {
-+                  let finalI = candidatesI[0];
-+                  const otherCandidates = candidatesI.slice(1,candidatesI.length).concat(candidatesObj);
-+                  otherCandidates.forEach((otherCandidate) => {
-+                    finalI.type._fields = {...finalI.type._fields, ...otherCandidate.type._fields};
-+                  });
-+                  typeCandidates[typeName] = [finalI];
++                    let finalI = candidatesI[0];
++                    const otherCandidates = candidatesI.slice(1, candidatesI.length).concat(candidatesObj);
++                    otherCandidates.forEach((otherCandidate) => {
++                        finalI.type._fields = { ...finalI.type._fields, ...otherCandidate.type._fields };
++                    });
++                    typeCandidates[typeName] = [finalI];
 +                }
-+              }
++                if (typeName === "Date") {
++                    typeCandidates[typeName] = candidates.filter((c) => c.type.constructor.name === "GraphQLScalarType")
++                }
++            }
 +
              typeMap[typeName] = (0, mergeCandidates_js_1.mergeCandidates)(typeName, typeCandidates[typeName], typeMergingOptions);
          }
          else {
-@@ -128,6 +146,26 @@ function buildTypes({ typeCandidates, directives, stitchingInfo, rootTypeNames,
+@@ -128,6 +148,42 @@ function buildTypes({ typeCandidates, directives, stitchingInfo, rootTypeNames,
              typeMap[typeName] = candidateSelector(typeCandidates[typeName]).type;
          }
      }
 +
 +    /**
-+     * When the "allOf" key is used, an object needs to have every propreties 
++     * When the "allOf" key is used, an object needs to have every propreties
 +     * of its parent. Because interfaces have been possibly merged earlier in
 +     * the patch, this statement is sometimes not true anymore.
 +     */
 +    Object.values(typeMap).forEach((type) => {
-+      if (type.constructor.name === "GraphQLObjectType") {
-+        if (type.astNode.interfaces.length !== 0) {
-+          type._interfaces = [];
-+          type.astNode.interfaces.forEach((i) => {
-+            const iName = i.name.value;
-+            const iFields = typeMap[iName].getFields();
-+            type._interfaces.push(typeMap[iName]);
-+            type.setFields(iFields);
-+          });
++        if (type.constructor.name === "GraphQLObjectType") {
++            if (type.astNode.interfaces.length !== 0) {
++                type._interfaces = [];
++                type.astNode.interfaces.forEach((i) => {
++                    const iName = i.name.value;
++                    const iFields = typeMap[iName].getFields();
++                    type._interfaces.push(typeMap[iName]);
++                    type.setFields(iFields);
++                });
++            }
++            if (type.astNode.interfaces.length >= 2) {
++                const firstFields = type._interfaces[0]._fields
++                type._interfaces.slice(1, type._interfaces.length).forEach((i) => {
++                    Object.keys(i._fields).forEach((field) => {
++                        if (field in firstFields) {
++                            if (i._fields[field].type.constructor.name !== firstFields[field].type.constructor.name || i._fields[field].type.constructor.name === "GraphQLObjectType") {
++                                i._fields[field] = firstFields[field]
++                                type._fields[field] = firstFields[field]
++                            }
++                        }
++                        else {
++                            firstFields[field] = i._fields[field]
++                        }
++                    })
++                })
++            }
 +        }
-+      }
 +    });
 +
      return (0, utils_1.rewireTypes)(typeMap, directives);
