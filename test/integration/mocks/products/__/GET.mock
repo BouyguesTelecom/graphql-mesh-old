@@ -20,6 +20,18 @@ Content-Type: application/json
         "supplier": {
           "href": `/suppliers/${supplierId}`
         }
+      },
+      "_actions": {
+        "update": {
+          "type": "application/json",
+          "action": `/products/add/${id}`,
+          "method": "PATCH"
+        },
+        "delete": {
+          "type": "application/json",
+          "action": `/products/delete/${id}`,
+          "method": "DELETE"
+        }
       }
     }, null, 2)
   }
