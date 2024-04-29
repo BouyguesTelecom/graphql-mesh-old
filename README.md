@@ -15,7 +15,7 @@
 This repo is a superset of [graphql-mesh](https://github.com/ardatan/graphql-mesh) with the following additional features:
 
 - `✨` support for [HATEOAS](https://en.wikipedia.org/wiki/HATEOAS) links;
-- `✨` support for advanced filtering with the `@SPL` directive;
+- `✨` support for advanced filtering with the [`@SPL`](./packages/directive-spl/README.md) directive;
 - `🩺` more lenient parsing of swaggers;
 - `🐛` a few bug fixes and added flexibility;
 
