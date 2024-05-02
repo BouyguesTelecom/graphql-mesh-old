@@ -1,5 +1,5 @@
 diff --git a/node_modules/graphql/type/definition.js b/node_modules/graphql/type/definition.js
-index b27c083..333d636 100644
+index b27c083..dc3beef 100644
 --- a/node_modules/graphql/type/definition.js
 +++ b/node_modules/graphql/type/definition.js
 @@ -713,6 +713,14 @@ class GraphQLObjectType {
@@ -28,6 +28,19 @@ index b27c083..333d636 100644
    getInterfaces() {
      if (typeof this._interfaces === 'function') {
        this._interfaces = this._interfaces();
+@@ -1100,11 +1112,7 @@ class GraphQLEnumType {
+     const enumValue = this._valueLookup.get(outputValue);
+ 
+     if (enumValue === undefined) {
+-      throw new _GraphQLError.GraphQLError(
+-        `Enum "${this.name}" cannot represent value: ${(0, _inspect.inspect)(
+-          outputValue,
+-        )}`,
+-      );
++      return outputValue
+     }
+ 
+     return enumValue.name;
 diff --git a/node_modules/graphql/validation/rules/UniqueFieldDefinitionNamesRule.js b/node_modules/graphql/validation/rules/UniqueFieldDefinitionNamesRule.js
 index f0d9fcb..701988e 100644
 --- a/node_modules/graphql/validation/rules/UniqueFieldDefinitionNamesRule.js
