@@ -1,0 +1,121 @@
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Vehicles API",
+    "description": "API to manage vehicles.",
+    "version": "1.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000/"
+    }
+  ],
+  "paths": {
+    "/vehicles": {
+      "get": {
+        "operationId": "getVehicles",
+        "summary": "List all vehicles",
+        "responses": {
+          "200": {
+            "description": "A list of vehicles",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Vehicles"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/vehicles/update": {
+      "post": {
+        "operationId": "updateVehicles",
+        "summary": "Update all vehicles",
+        "responses": {
+          "204": {
+						"description": "successful operation",
+						"content": {}
+					}
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Car": {
+        "allOf": [
+          {
+						"$ref": "#/components/schemas/Vehicle"
+					},
+					{
+						"description": "",
+						"type": "object",
+						"properties": {
+							"fuelType": {
+								"type": "string"
+							}
+						}
+					}
+        ]
+      },
+      "Bike": {
+        "allOf": [
+          {
+						"$ref": "#/components/schemas/Vehicle"
+					},
+					{
+						"description": "",
+						"type": "object",
+						"properties": {
+							"bikeType": {
+								"type": "string",
+                "enum": [
+                  "Road_Bike",
+                  "Electric_Bike",
+                  "Mountain_Bike"
+                ]
+							}
+						}
+					}
+        ]
+      },
+      "Vehicle": {
+        "type": "object",
+        "discriminator": {
+					"propertyName": "type",
+					"mapping": {
+						"CAR": "#/components/schemas/Car",
+            "BIKE": "#/components/schemas/Bike"
+					}
+				},
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "type": {
+            "type": "string"
+          },
+          "brand": {
+            "type": "string"
+          }
+        }
+      },
+      "Vehicles": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Vehicle"
+            }
+          }
+        }
+      }
+    }
+  }
+}

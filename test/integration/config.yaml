@@ -9,6 +9,16 @@ sources:
       openapi:
         source: http://api-products:8080/api-docs/suppliers
         endpoint: http://api-products:8080
+  - name: Vehicles
+    handler:
+      openapi:
+        source: http://api-products:8080/api-docs/vehicles
+        endpoint: http://api-products:8080
+  - name: ConflictInterfaceObject
+    handler:
+      openapi:
+        source: http://api-products:8080/api-docs/vehicles2
+        endpoint: http://api-products:8080
 
   - name: Authentication
     handler:

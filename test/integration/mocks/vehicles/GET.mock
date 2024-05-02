@@ -1,0 +1,28 @@
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "items": [
+    {
+      "id": 1,
+      "numberOfWheels": 4,
+      "type": "Car",
+      "brand": "Nissan",
+      "fuelType": "Gas"
+    },
+    {
+      "id": 2,
+      "numberOfWheels": 4,
+      "type": "CAR",
+      "brand": "Tesla",
+      "fuelType": "Electricity"
+    },
+    {
+      "id": 3,
+      "numberOfWheels": 2,
+      "type": "BIKE",
+      "brand": "Decathlon",
+      "bikeType": "Mountain_Bike"
+    }
+  ]
+}

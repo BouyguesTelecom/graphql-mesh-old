@@ -211,7 +211,7 @@ export const generateTypeDefsAndResolversFromSwagger = (
           let varToCompare = trimedSchemaKey
           interfacesWithChildren[trimedSchemaKey].forEach((type) => {
             const regex = new RegExp(` ${varToCompare} `, 'g')
-            if (Object.keys(interfacesWithChildren).includes(type)) {
+            if (Object.keys(interfacesWithChildren).includes(type) && type !== trimedSchemaKey) {
               typeDefs += typeDefs
                 .match(/[\s\S]*(^[\s\S]*{[\s\S]*)/m)![1]
                 .replace('type', 'interface')
@@ -235,7 +235,7 @@ export const generateTypeDefsAndResolversFromSwagger = (
                   resolvers[t][key] = resolvers[type][key]
                 }
               })
-            } else {
+            } if (!Object.keys(interfacesWithChildren).includes(type)) {
               typeDefs += typeDefs
                 .match(/[\s\S]*(^[\s\S]*{[\s\S]*)/m)![1]
                 .replace('interface', 'type')
