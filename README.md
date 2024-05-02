@@ -2,9 +2,9 @@
 
 <div align='center'>
 
-# Graphql mesh gateway
+# GraphQL Mesh gateway
 
-**The Graph of Everything - Federated architecture for any API service**
+**The Graph of Everything - Federated architecture for any API service - Dockerized**
 
 **[🤿 Dive in!](#getting-started)**
 
@@ -45,7 +45,7 @@ The way GraphQL Mesh works is:
 
 ## Getting Started
 
-1. Write a configuration file `config.yaml`
+1. Write a configuration file `config.yaml` like below:
 
 ```yaml
 sources:
@@ -85,24 +85,24 @@ serve:
 
 2. Run the service:
 
-   ```sh
-   $ docker run -it -p 4000:4000 \
-      -v ./sources:/app/sources \
-      -v ./transforms:/app/transforms \
-      -v ./plugins:/app/plugins \
-      -v ./config.yaml:/app/config.yaml \
-     bouyguestelecom/graphql-mesh:0.1.0
-   ```
+```sh
+$ docker run -it -p 4000:4000 \
+  -v ./sources:/app/sources \
+  -v ./transforms:/app/transforms \
+  -v ./plugins:/app/plugins \
+  -v ./config.yaml:/app/config.yaml \
+  bouyguestelecom/graphql-mesh:0.1.0
+```
 
-Make sure that your api endpoint is up before running this command
+Make sure that your api endpoint is up before running this command.
 
-*See the [integrations](#integrations) section for more use cases, such as with docker compose.*
+*See the [integrations](#integrations) section for more use cases, such as docker compose.*
 
 ## Integrations
 
-### with `docker-compose`
+### with `docker compose`
 
-This example can be tested inside [test/integration](./test/integration/) folder
+This example can be tested inside the [test/integration](./test/integration/) folder.
 
 1. Prepare your `compose.yml`:
 
@@ -141,7 +141,10 @@ services:
     restart: unless-stopped
 ```
 
-2. Run it: `docker-compose up`
+2. Run it:
+```sh
+$ docker compose up
+```
 
 3. Access it: <http://localhost:45538/graphql>
 

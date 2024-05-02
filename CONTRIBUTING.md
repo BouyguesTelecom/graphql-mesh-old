@@ -1,4 +1,4 @@
-# Welcome to
+# Welcome to GraphQL Mesh
 
 Thank you for investing time in contributing to this project!
 
@@ -6,18 +6,17 @@ Thank you for investing time in contributing to this project!
 
 ```
 ├── packages/
-|   ├── directive-headers/ directive for adding headers
-|   ├── directive-no-auth/ directive for removing authorization header
-|   ├── directive-spl/ directive for sort, filter and paginate
+|   ├── directive-headers/ # directive to add headers
+|   ├── directive-no-auth/ # directive to remove authorization headers
+|   ├── directive-spl/ # directive to sort, filter and paginate
 |   ├── graphql-mesh/ # superset of [graphql-mesh](https://github.com/ardatan/graphql-mesh) with patches and customs features
 |   ├── inject-additionnal-transforms/
 ├── test/
-|   ├── integration/ # Folder contains intégration tests and mocks for them
-|   |   ├── mocks/ # Static files for testing api
-|   |   ├── plugins/ # Custom plugin for integration tests
-|   |   ├── mocks/ # Static files for testing api
+|   ├── integration/ # Folder containing integration tests and mocks used by them
+|   |   ├── mocks/ # static files for testing api
+|   |   ├── plugins/ # custom plugin for integration tests
 |   |   ├── tests/ # tests cases
-|   |   ├── tranforms/ # Custom transform for integration tests
+|   |   ├── tranforms/ # custom transform for integration tests
 ```
 
 ## Getting started
@@ -28,15 +27,15 @@ After cloning the repo locally, initialize, build and start the services with:
 npm install
 ```
 
-## Usefull commands
+## Useful commands
 
-* Once you've added your saggers to your [sources](./packages/graphql-mesh/sources/) folder or your [config.yaml](./packages/graphql-mesh/config.yaml) you can start the service with
+* Once you've added your swagger files to your [sources](./packages/graphql-mesh/sources/) folder or your [config.yaml](./packages/graphql-mesh/config.yaml), you can start the service with:
 
 ```shell
 npm run start
 ```
 
-* Build docker image 🐳 for local test
+* Build the 🐳 Docker image for local test with:
 
 ```shell
 cd packages/graphql-mesh && npm run build:local:image
@@ -46,21 +45,21 @@ cd packages/graphql-mesh && npm run build:local:image
 To avoid publishing their packages in npm registry and using them inside `graphql-mesh` package, we pefer to pack them into [local-pkg](./packages/graphql-mesh/local-pkg/).
 This approach is interesting because it avoids publishing these packages at each changes.
 
-If any changes are made to their packages, you need to clean your `node_modules` and run `npm install` again.
+If any changes are made to these packages, you need to clean your `node_modules` and run `npm install` again with:
 
 ```shell
 npm run clean:modules && npm install
 ```
 
-* Running integration tests locally
+* Run the integration tests locally:
 
-  * Start services
+  * Start the services:
 
   ```shell
   cd test/integration && docker-compose up
   ```
 
-  * Run tests
+  * Run the tests:
 
   ```shell
   cd test/integration/tests && npm install && npm test
