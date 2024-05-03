@@ -1,10 +1,7 @@
 export const mergeObjects = (obj1: any, obj2: any) => {
   for (const key in obj2) {
-    if (key in obj1 && typeof obj1[key] === 'object') {
-      obj1[key] = mergeObjects(obj1[key], obj2[key])
-    } else {
-      obj1[key] = obj2[key]
-    }
+    obj1[key] =
+      key in obj1 && typeof obj1[key] === 'object' ? mergeObjects(obj1[key], obj2[key]) : obj2[key]
   }
   return obj1
 }

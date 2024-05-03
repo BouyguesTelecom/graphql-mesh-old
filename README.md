@@ -2,9 +2,9 @@
 
 <div align='center'>
 
-# Graphql mesh gateway
+# GraphQL Mesh gateway
 
-**The Graph of Everything - Federated architecture for any API service**
+**The Graph of Everything - Federated architecture for any API service - Dockerized**
 
 **[🤿 Dive in!](#getting-started)**
 
@@ -15,7 +15,7 @@
 This repo is a superset of [graphql-mesh](https://github.com/ardatan/graphql-mesh) with the following additional features:
 
 - `✨` support for [HATEOAS](https://en.wikipedia.org/wiki/HATEOAS) links;
-- `✨` support for advanced filtering with the `@SPL` directive;
+- `✨` support for advanced filtering with the [`@SPL`](./packages/directive-spl/README.md) directive;
 - `🩺` more lenient parsing of swaggers;
 - `🐛` a few bug fixes and added flexibility;
 
@@ -45,13 +45,108 @@ The way GraphQL Mesh works is:
 
 ## Getting Started
 
-1. Write a configuration file `config.yaml`
+1. Write a configuration file `config.yaml` like below:
+
+```yaml
+sources:
+  - name: Products
+    handler:
+      openapi:
+        source: http://api-products:8080/api-docs/products
+        endpoint: http://api-products:8080
+  - name: Suppliers
+    handler:
+      openapi:
+        source: http://api-products:8080/api-docs/suppliers
+        endpoint: http://api-products:8080
+
+  - name: Authentication
+    handler:
+      openapi:
+        source: http://api-products:8080/api-docs/authenticate
+        endpoint: http://api-products:8080
+
+additionalEnvelopPlugins: "./plugins"
+additionalTransforms: [{ "./transforms/index.ts": {} }]
+additionalTypeDefs: |
+  """
+  This directive is used to convert the result to uppercase.
+  """
+  directive @lower on FIELD
+skipSSLValidation: true
+serve:
+  hostname: 0.0.0.0
+  port: 3000
+  cors:
+    origin: "*"
+  playground: true
+  playgroundTitle: Console GraphQL
+```
+
 2. Run the service:
 
-   ```sh
-   $ docker run -it -p 4000:4000 -v ./sources:/app/sources \
-     bouyguestelecom/graphql-mesh:0.1.0
-   ```
+```sh
+$ docker run -it -p 4000:4000 \
+  -v ./sources:/app/sources \
+  -v ./transforms:/app/transforms \
+  -v ./plugins:/app/plugins \
+  -v ./config.yaml:/app/config.yaml \
+  bouyguestelecom/graphql-mesh:0.1.0
+```
+
+Make sure that your api endpoint is up before running this command.
+
+*See the [integrations](#integrations) section for more use cases, such as docker compose.*
+
+## Integrations
+
+### with `docker compose`
+
+This example can be tested inside the [test/integration](./test/integration/) folder.
+
+1. Prepare your `compose.yml`:
+
+```yaml
+services:
+  api-products:
+    image: shubhendumadhukar/camouflage
+    ports:
+      - 45537:8080
+    volumes:
+      - ../mocks/camouflage.yaml:/app/config.yml:ro
+      - ../mocks:/app/mocks:ro
+
+    healthcheck:
+      test: wget --spider --tries=1 --no-verbose http://localhost:8080/products || exit 1
+      interval: 10s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  graphql-mesh:
+    depends_on:
+      api-products:
+        condition: service_healthy
+    links:
+      - api-products
+    image: bouyguestelecom/graphql-mesh
+    environment:
+      - DEBUG=1
+    ports:
+      - 45538:3000
+    volumes:
+      - ./transforms:/app/transforms:ro
+      - ./plugins:/app/plugins:ro
+      - ./config.yaml:/app/config.yaml:ro
+    restart: unless-stopped
+```
+
+2. Run it:
+```sh
+$ docker compose up
+```
+
+3. Access it: <http://localhost:45538/graphql>
 
 ## Contributions
 
