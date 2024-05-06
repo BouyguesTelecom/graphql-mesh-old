@@ -35,7 +35,11 @@ const config = <YamlConfig.Config>{
   additionalResolvers: [
     ...(defaultConfig.additionalResolvers || []),
     './utils/additionalResolvers.ts'
-  ].filter(Boolean)
+  ].filter(Boolean),
+  plugins: [
+    { './custom-plugins/filter-null.ts': { filter: defaultConfig.filterNull ?? false } },
+    ...(defaultConfig.plugins || [])
+  ]
 }
 
 export default config

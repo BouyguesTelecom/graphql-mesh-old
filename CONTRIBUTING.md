@@ -6,8 +6,6 @@ Thank you for investing time in contributing to this project!
 
 ```
 ├── packages/
-|   ├── directive-headers/ # directive to add headers
-|   ├── directive-no-auth/ # directive to remove authorization headers
 |   ├── directive-spl/ # directive to sort, filter and paginate
 |   ├── graphql-mesh/ # superset of [graphql-mesh](https://github.com/ardatan/graphql-mesh) with patches and customs features
 |   ├── inject-additionnal-transforms/
