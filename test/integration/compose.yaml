@@ -9,7 +9,7 @@ services:
       - ../mocks:/app/mocks:ro
 
     healthcheck:
-      # https://stackoverflow.com/questions/72708667/use-wget-instead-of-curl-for-healthchecks-in-asp-net-core-docker-images
+      # @source https://stackoverflow.com/questions/72708667/use-wget-instead-of-curl-for-healthchecks-in-asp-net-core-docker-images
       test: wget --spider --tries=1 --no-verbose http://localhost:8080/products || exit 1
       interval: 10s
       timeout: 10s
@@ -24,12 +24,6 @@ services:
     links:
       - api-products
     image: ${IMAGE_TAG:-graphql-mesh}
-    # build: ../../packages/graphql-mesh
-    # command: npm run build:local:image
-    # develop:
-    #   watch:
-    #     - action: rebuild
-    #       path: ../../packages/graphql-mesh
     environment:
       - DEBUG=1
     ports:

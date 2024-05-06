@@ -2,31 +2,36 @@ import { defaultFieldResolver, GraphQLSchema } from 'graphql'
 import { MeshTransform } from '@graphql-mesh/types'
 import { MapperKind, mapSchema } from '@graphql-tools/utils'
 
-export default class NoAuthDirectiveTransform implements MeshTransform {
+export default class HeadersDirectiveTransform implements MeshTransform {
   noWrap = true
 
   transformSchema(schema: GraphQLSchema) {
     return mapSchema(schema, {
       [MapperKind.OBJECT_FIELD]: (fieldConfig) => {
-        const originalResolver =
-          fieldConfig.resolve != null ? fieldConfig.resolve : defaultFieldResolver
+        const originalResolver = fieldConfig.resolve ?? defaultFieldResolver
 
         const resolver = async (next: any, _source: any, _args: any, context: any, info: any) => {
           const { directives } = info.fieldNodes[0]
-          const noAuthDirective = directives.find(
-            (directive: { name: { value: string } }) => directive.name.value === 'noAuth'
+          const headersDirective = directives.find(
+            (directive: { name: { value: string } }) => directive.name.value === 'headers'
           )
 
-          /**
-           * In order to set headers for the request, we need override authorization headers
-           * an pass it to execute function
-           */
-          if (noAuthDirective) {
-            context = { ...context, headers: { ...context.headers, authorization: '' } }
-          }
-          let result = await next(context)
+          if (headersDirective) {
+            const { value } = headersDirective.arguments[0]
 
-          return result
+            value?.values?.forEach((item: { fields: [any, any] }) => {
+              const [headerName, headerValue] = item.fields
+              context = {
+                ...context,
+                headers: {
+                  ...context.headers,
+                  [headerName.value.value.toLowerCase()]: headerValue.value.value
+                }
+              }
+            })
+          }
+
+          return await next(context)
         }
 
         fieldConfig.resolve = (source, originalArgs, context, info) => {
@@ -51,9 +56,14 @@ export default class NoAuthDirectiveTransform implements MeshTransform {
   }
 }
 
-export const noAuthDirectiveTypeDef: string = /* GraphQL */ `
+export const headersDirectiveTypeDef: string = /* GraphQL */ `
+  input Header {
+    key: String
+    value: String
+  }
+
   """
-  This directive is used to disable the authorization header for the request
+  This directive is used to add headers to the request.
   """
-  directive @noAuth on FIELD
+  directive @headers(input: [Header]) on FIELD
 `

@@ -19,8 +19,6 @@
     "@graphql-mesh/transform-type-merging": "^0.96.2",
     "@graphql-tools/schema": "^10.0.2",
     "@graphql-tools/utils": "^10.0.12",
-    "directive-headers": "file:./local-pkg/directive-headers-1.0.0.tgz",
-    "directive-no-auth": "file:./local-pkg/directive-no-auth-1.0.0.tgz",
     "directive-spl": "file:./local-pkg/directive-spl-1.0.0.tgz",
     "glob": "^10.3.10",
     "graphql": "^16.8.1",
