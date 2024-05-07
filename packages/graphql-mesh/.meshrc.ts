@@ -37,7 +37,7 @@ const config = <YamlConfig.Config>{
     './utils/additionalResolvers.ts'
   ].filter(Boolean),
   plugins: [
-    { './custom-plugins/filter-null.ts': { filter: defaultConfig.filterNull ?? false } },
+    { 'filter-null-plugin': { filter: defaultConfig.filterNull ?? false } },
     ...(defaultConfig.plugins || [])
   ]
 }
