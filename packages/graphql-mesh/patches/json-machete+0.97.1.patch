@@ -1,5 +1,5 @@
 diff --git a/node_modules/json-machete/cjs/healJSONSchema.js b/node_modules/json-machete/cjs/healJSONSchema.js
-index 5d7e615..a3872f3 100644
+index 5d7e615..4e4ac18 100644
 --- a/node_modules/json-machete/cjs/healJSONSchema.js
 +++ b/node_modules/json-machete/cjs/healJSONSchema.js
 @@ -40,12 +40,31 @@ exports.AnySchema = {
@@ -56,3 +56,17 @@ index 5d7e615..a3872f3 100644
                                  // Otherwise use the format name
                              }
                              break;
+@@ -388,8 +408,11 @@ async function healJSONSchema(schema, debugLogFn) {
+                             }
+                             break;
+                         default:
+-                            debugLogFn?.(`${path} has no title. Setting it to ${pathBasedName}`);
+-                            subSchema.title = subSchema.title || pathBasedName;
++                            const neWpathBasedName = pathBasedName.replaceAll("_allOf_0_allOf_1", "").replaceAll("_allOf_1", "").replaceAll("_allOf_0", "")
++                            let newTitle = neWpathBasedName.split('_')[neWpathBasedName.split('_').length-1]
++                            newTitle = newTitle.charAt(0).toUpperCase() + newTitle.slice(1) + "_interface"
++                            debugLogFn?.(`${path} has no title. Setting it to ${newTitle}`);
++                            subSchema.title = subSchema.title || newTitle;
+                     }
+                     if (subSchema.const) {
+                         subSchema.title = subSchema.const.toString() + '_const';
