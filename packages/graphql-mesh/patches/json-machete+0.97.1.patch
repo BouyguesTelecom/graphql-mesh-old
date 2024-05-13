@@ -1,8 +1,8 @@
 diff --git a/node_modules/json-machete/cjs/healJSONSchema.js b/node_modules/json-machete/cjs/healJSONSchema.js
-index 5d7e615..4e4ac18 100644
+index 5d7e615..dec57ab 100644
 --- a/node_modules/json-machete/cjs/healJSONSchema.js
 +++ b/node_modules/json-machete/cjs/healJSONSchema.js
-@@ -40,12 +40,31 @@ exports.AnySchema = {
+@@ -40,12 +40,28 @@ exports.AnySchema = {
          { type: 'object', additionalProperties: true },
      ],
  };
@@ -26,15 +26,12 @@ index 5d7e615..4e4ac18 100644
      return (0, visitJSONSchema_js_1.visitJSONSchema)(schema, {
          enter: async function healSubschema(subSchema, { path }) {
              if (typeof subSchema === 'object') {
-+                /**
-+                 * We remove the "minLength", "maxLength" and "pattern" fields of each scalars
-+                 * as it would create too many unecessary types.
-+                 */
++                // Remove the "minLength", "maxLength" and "pattern" properties of each scalar
 +                removeUnnecessaryProperties(subSchema)
                  if (subSchema.title === 'Any' ||
                      (subSchema.oneOf && (0, cross_inspect_1.inspect)(subSchema.oneOf) === anySchemaOneOfInspect)) {
                      return exports.AnySchema;
-@@ -355,13 +374,14 @@ async function healJSONSchema(schema, debugLogFn) {
+@@ -355,21 +371,13 @@ async function healJSONSchema(schema, debugLogFn) {
                          .join('_');
                      switch (subSchema.type) {
                          case 'string':
@@ -45,10 +42,15 @@ index 5d7e615..4e4ac18 100644
 -                                subSchema.enum) {
 -                                debugLogFn?.(`${path} has a pattern or maxLength or minLength or enum but no title. Setting it to ${pathBasedName}`);
 -                                subSchema.title = pathBasedName;
-+                            /**
-+                             * We change the default enumm names to make them easier to read.
-+                             * This fix also enables us to merge enums having the same name.
-+                             */
+-                                // Otherwise use the format name
+-                            }
+-                            break;
+                         case 'number':
+                         case 'integer':
+-                            if (subSchema.enum || subSchema.pattern) {
+-                                debugLogFn?.(`${path} has an enum or pattern but no title. Setting it to ${pathBasedName}`);
+-                                subSchema.title = pathBasedName;
++                            // Change the default enum names to make them easier to read
 +                            if (subSchema.enum) {
 +                                const subSchemaName = `ENUM_${maybeDefinitionBasedPath.split('/')[maybeDefinitionBasedPath.split('/').length-1]}`
 +                                debugLogFn?.(`${path} has a enum but no title. Setting it to ${subSchemaName}`);
@@ -56,12 +58,13 @@ index 5d7e615..4e4ac18 100644
                                  // Otherwise use the format name
                              }
                              break;
-@@ -388,8 +408,11 @@ async function healJSONSchema(schema, debugLogFn) {
+@@ -388,8 +396,12 @@ async function healJSONSchema(schema, debugLogFn) {
                              }
                              break;
                          default:
 -                            debugLogFn?.(`${path} has no title. Setting it to ${pathBasedName}`);
 -                            subSchema.title = subSchema.title || pathBasedName;
++                            // Change the default type names to make them easier to read
 +                            const neWpathBasedName = pathBasedName.replaceAll("_allOf_0_allOf_1", "").replaceAll("_allOf_1", "").replaceAll("_allOf_0", "")
 +                            let newTitle = neWpathBasedName.split('_')[neWpathBasedName.split('_').length-1]
 +                            newTitle = newTitle.charAt(0).toUpperCase() + newTitle.slice(1) + "_interface"
