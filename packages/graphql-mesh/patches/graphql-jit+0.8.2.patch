@@ -1,8 +1,8 @@
 diff --git a/node_modules/graphql-jit/dist/execution.js b/node_modules/graphql-jit/dist/execution.js
-index ee4f545..469af2f 100644
+index ee4f545..9a0e620 100644
 --- a/node_modules/graphql-jit/dist/execution.js
 +++ b/node_modules/graphql-jit/dist/execution.js
-@@ -348,8 +348,10 @@ function compileType(context, parentType, type, fieldNodes, originPaths, destina
+@@ -348,8 +348,9 @@ function compileType(context, parentType, type, fieldNodes, originPaths, destina
      let errorDestination;
      if ((0, graphql_1.isNonNullType)(type)) {
          type = type.ofType;
@@ -10,11 +10,10 @@ index ee4f545..469af2f 100644
          const nullErrorStr = `"Cannot return null for non-nullable field ${parentType.name}.${getFieldNodesName(fieldNodes)}."`;
 -        body += `(${GLOBAL_NULL_ERRORS_NAME}.push(${createErrorObject(context, fieldNodes, previousPath, nullErrorStr)}), null) :`;
 +        body += `(console.error(${nullErrorStr}), null) : `;
-+        // body += `(${GLOBAL_NULL_ERRORS_NAME}.push(${createErrorObject(context, fieldNodes, previousPath, nullErrorStr)}), null) :`;
          errorDestination = GLOBAL_NULL_ERRORS_NAME;
      }
      else {
-@@ -910,6 +912,11 @@ function defaultResolveTypeFn(value, contextValue, info, abstractType) {
+@@ -910,6 +911,11 @@ function defaultResolveTypeFn(value, contextValue, info, abstractType) {
                  return type.name;
              }
          }
