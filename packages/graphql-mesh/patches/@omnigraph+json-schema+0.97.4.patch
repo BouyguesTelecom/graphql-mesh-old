@@ -1,5 +1,5 @@
 diff --git a/node_modules/@omnigraph/json-schema/cjs/addRootFieldResolver.js b/node_modules/@omnigraph/json-schema/cjs/addRootFieldResolver.js
-index 8006747..265ee3f 100644
+index 8006747..dfc6825 100644
 --- a/node_modules/@omnigraph/json-schema/cjs/addRootFieldResolver.js
 +++ b/node_modules/@omnigraph/json-schema/cjs/addRootFieldResolver.js
 @@ -35,6 +35,23 @@ function addHTTPRootFieldResolver(schema, field, logger, globalFetch, { path, op
@@ -26,13 +26,3 @@ index 8006747..265ee3f 100644
          const headers = {};
          for (const headerName in globalOperationHeaders) {
              const nonInterpolatedValue = globalOperationHeaders[headerName];
-@@ -275,7 +292,8 @@ function addHTTPRootFieldResolver(schema, field, logger, globalFetch, { path, op
-                         http: {
-                             status: response.status,
-                             statusText: response.statusText,
--                            headers: (0, utils_1.getHeadersObj)(response.headers),
-+                            // FIXME: This is a hack for the 'ownKeys' error
-+                            //headers: (0, utils_1.getHeadersObj)(response.headers),
-                         },
-                         request: {
-                             url: fullPath,

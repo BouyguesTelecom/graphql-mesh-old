@@ -1,5 +1,7 @@
 diff --git a/node_modules/json-machete/cjs/healJSONSchema.js b/node_modules/json-machete/cjs/healJSONSchema.js
-index 5d7e615..dec57ab 100644
+old mode 100644
+new mode 100755
+index 5d7e615..7d4ed0c
 --- a/node_modules/json-machete/cjs/healJSONSchema.js
 +++ b/node_modules/json-machete/cjs/healJSONSchema.js
 @@ -40,12 +40,28 @@ exports.AnySchema = {
@@ -31,45 +33,16 @@ index 5d7e615..dec57ab 100644
                  if (subSchema.title === 'Any' ||
                      (subSchema.oneOf && (0, cross_inspect_1.inspect)(subSchema.oneOf) === anySchemaOneOfInspect)) {
                      return exports.AnySchema;
-@@ -355,21 +371,13 @@ async function healJSONSchema(schema, debugLogFn) {
-                         .join('_');
-                     switch (subSchema.type) {
-                         case 'string':
--                            // If it has special pattern, use path based name because it is specific
--                            if (subSchema.pattern ||
--                                subSchema.maxLength ||
--                                subSchema.minLength ||
--                                subSchema.enum) {
+@@ -360,8 +376,10 @@ async function healJSONSchema(schema, debugLogFn) {
+                                 subSchema.maxLength ||
+                                 subSchema.minLength ||
+                                 subSchema.enum) {
 -                                debugLogFn?.(`${path} has a pattern or maxLength or minLength or enum but no title. Setting it to ${pathBasedName}`);
 -                                subSchema.title = pathBasedName;
--                                // Otherwise use the format name
--                            }
--                            break;
-                         case 'number':
-                         case 'integer':
--                            if (subSchema.enum || subSchema.pattern) {
--                                debugLogFn?.(`${path} has an enum or pattern but no title. Setting it to ${pathBasedName}`);
--                                subSchema.title = pathBasedName;
-+                            // Change the default enum names to make them easier to read
-+                            if (subSchema.enum) {
-+                                const subSchemaName = `ENUM_${maybeDefinitionBasedPath.split('/')[maybeDefinitionBasedPath.split('/').length-1]}`
-+                                debugLogFn?.(`${path} has a enum but no title. Setting it to ${subSchemaName}`);
-+                                subSchema.title = subSchemaName;
++                                // Change enum names to be able to merge them
++                                const newEnumName = `ENUM_${maybeDefinitionBasedPath.split('/')[maybeDefinitionBasedPath.split('/').length-1]}`
++                                debugLogFn?.(`${path} has a enum but no title. Setting it to ${newEnumName}`);
++                                subSchema.title = newEnumName;
                                  // Otherwise use the format name
                              }
                              break;
-@@ -388,8 +396,12 @@ async function healJSONSchema(schema, debugLogFn) {
-                             }
-                             break;
-                         default:
--                            debugLogFn?.(`${path} has no title. Setting it to ${pathBasedName}`);
--                            subSchema.title = subSchema.title || pathBasedName;
-+                            // Change the default type names to make them easier to read
-+                            const neWpathBasedName = pathBasedName.replaceAll("_allOf_0_allOf_1", "").replaceAll("_allOf_1", "").replaceAll("_allOf_0", "")
-+                            let newTitle = neWpathBasedName.split('_')[neWpathBasedName.split('_').length-1]
-+                            newTitle = newTitle.charAt(0).toUpperCase() + newTitle.slice(1) + "_interface"
-+                            debugLogFn?.(`${path} has no title. Setting it to ${newTitle}`);
-+                            subSchema.title = subSchema.title || newTitle;
-                     }
-                     if (subSchema.const) {
-                         subSchema.title = subSchema.const.toString() + '_const';

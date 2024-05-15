@@ -1,5 +1,7 @@
 diff --git a/node_modules/graphql-jit/dist/execution.js b/node_modules/graphql-jit/dist/execution.js
-index ee4f545..9a0e620 100644
+old mode 100644
+new mode 100755
+index ee4f545..e0cbe09
 --- a/node_modules/graphql-jit/dist/execution.js
 +++ b/node_modules/graphql-jit/dist/execution.js
 @@ -348,8 +348,9 @@ function compileType(context, parentType, type, fieldNodes, originPaths, destina
@@ -13,15 +15,3 @@ index ee4f545..9a0e620 100644
          errorDestination = GLOBAL_NULL_ERRORS_NAME;
      }
      else {
-@@ -910,6 +911,11 @@ function defaultResolveTypeFn(value, contextValue, info, abstractType) {
-                 return type.name;
-             }
-         }
-+        else {
-+            if (value.type.toUpperCase() === type.name.toUpperCase()) {
-+                return type.name
-+            }
-+        }
-     }
-     throw new Error(`Could not resolve the object type in possible types of ${abstractType.name} for the value: ` +
-         inspect(value));
