@@ -72,6 +72,9 @@ Content-Type: application/json
           },
           "name": {
             "type": "string"
+          },
+          "address": {
+            "type": "string"
           }
         }
       },

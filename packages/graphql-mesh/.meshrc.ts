@@ -1,8 +1,8 @@
 import { YamlConfig } from '@graphql-mesh/types'
 import ConfigFromSwaggers from './utils/ConfigFromSwaggers'
 import { splDirectiveTypeDef } from 'directive-spl'
-import { headersDirectiveTypeDef } from 'directive-headers'
-import { noAuthDirectiveTypeDef } from 'directive-no-auth'
+import { headersDirectiveTypeDef } from './directives/headers'
+import { noAuthDirectiveTypeDef } from './directives/no-auth'
 
 const configFromSwaggers = new ConfigFromSwaggers()
 const { defaultConfig, additionalTypeDefs, sources } =
@@ -12,11 +12,14 @@ const config = <YamlConfig.Config>{
   ...defaultConfig,
   transforms: [
     { 'directive-spl': {} },
-    { 'directive-headers': {} },
-    { 'directive-no-auth': {} },
     {
       'inject-additional-transforms': {
-        additionalTransforms: defaultConfig.additionalTransforms || []
+        additionalTransforms:
+          [
+            { './directives/headers.ts': {} },
+            { './directives/no-auth.ts': {} },
+            ...(defaultConfig.additionalTransforms || [])
+          ] || []
       }
     },
     ...(defaultConfig.transforms || [])
@@ -32,7 +35,11 @@ const config = <YamlConfig.Config>{
   additionalResolvers: [
     ...(defaultConfig.additionalResolvers || []),
     './utils/additionalResolvers.ts'
-  ].filter(Boolean)
+  ].filter(Boolean),
+  plugins: [
+    { 'filter-null-plugin': { filter: defaultConfig.filterNull ?? false } },
+    ...(defaultConfig.plugins || [])
+  ]
 }
 
 export default config

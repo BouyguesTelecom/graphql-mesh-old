@@ -8,8 +8,7 @@ export default class LowerDirectiveTransform implements MeshTransform {
   transformSchema(schema: GraphQLSchema) {
     return mapSchema(schema, {
       [MapperKind.OBJECT_FIELD]: (fieldConfig) => {
-        const originalResolver =
-          fieldConfig.resolve != null ? fieldConfig.resolve : defaultFieldResolver
+        const originalResolver = fieldConfig.resolve ?? defaultFieldResolver
 
         const resolver = async (next: any, _source: any, _args: any, context: any, info: any) => {
           const { directives } = info.fieldNodes[0]
@@ -17,12 +16,10 @@ export default class LowerDirectiveTransform implements MeshTransform {
             (directive: { name: { value: string } }) => directive.name.value === 'lower'
           )
 
-          let result = await next(context)
+          const result = await next(context)
 
-          if (upperDirective) {
-            if (typeof result === 'string') {
-              result = result.toLowerCase()
-            }
+          if (upperDirective && typeof result === 'string') {
+            return result.toLowerCase()
           }
 
           return result
