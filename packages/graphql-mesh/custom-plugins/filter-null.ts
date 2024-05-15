@@ -8,7 +8,7 @@ export default ({ filter }): Plugin => {
     onExecute() {
       return {
         onExecuteDone({ result, setResult }) {
-          if (filter && (result as ObjMap<{ data: Object }>).data != null) {
+          if (filter && (result as ObjMap<{ data: Object }>).data !== null) {
             setResult({
               ...result,
               data: filterNullValues((result as ObjMap<{ data: Object }>).data)
