@@ -9,23 +9,22 @@ export default class SplDirectiveTransform implements MeshTransform {
   transformSchema(schema: GraphQLSchema) {
     return mapSchema(schema, {
       [MapperKind.OBJECT_FIELD]: (fieldConfig) => {
-        const originalResolver =
-          fieldConfig.resolve != null ? fieldConfig.resolve : defaultFieldResolver
+        const originalResolver = fieldConfig.resolve ?? defaultFieldResolver
 
         const resolver = async (next: any , _source: any, _args: any, context: any, info: any) => {
           const { directives } = info.fieldNodes[0]
           const splDirective = directives.find((directive: { name: { value: string } }) => directive.name.value === 'SPL')
-          let result = await next(context)
+          const result = await next(context)
 
           if (splDirective) {
             const { value } = splDirective.arguments[0]
 
-            let data = splListFilterer.filter(
+            const data = splListFilterer.filter(
               value.value,
               splListFilterer.formatInput(result),
               splListFilterer.formatVariables(context.params.variables || {})
             )
-            result = splListFilterer.formatOutput(data)
+            return splListFilterer.formatOutput(data)
           }
 
           return result

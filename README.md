@@ -16,6 +16,9 @@ This repo is a superset of [ardatan/graphql-mesh](https://github.com/ardatan/gra
 
 - `✨` support for [HATEOAS](https://en.wikipedia.org/wiki/HATEOAS) links;
 - `✨` support for advanced filtering with the [`@SPL`](./packages/directive-spl/README.md) directive;
+- `✨` support adding additional headers with [`@headers`](./test/integration/tests/cases/directive-headers.test.ts) directive;
+- `✨` support removing authorization headers with [`@noAuth`](./test/integration/tests/cases/directive-no-auth.test.ts) directive;
+- `✨` support filtering null values from request result by setting `filterNull` in config
 - `🩺` more lenient parsing of swaggers;
 - `🐛` a few bug fixes and added flexibility;
 
@@ -74,6 +77,7 @@ The way GraphQL Mesh works is:
      """
      directive @lower on FIELD
    skipSSLValidation: true
+   filterNull: false
    serve:
      hostname: 0.0.0.0
      port: 3000
