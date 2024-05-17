@@ -1,6 +1,7 @@
 import { YamlConfig } from '@graphql-mesh/types'
 import ConfigFromSwaggers from './utils/ConfigFromSwaggers'
 import { splDirectiveTypeDef } from 'directive-spl'
+import { catchHTTPErrorDirectiveTypeDef } from './directives/catchHTTPError'
 import { headersDirectiveTypeDef } from './directives/headers'
 import { noAuthDirectiveTypeDef } from './directives/no-auth'
 
@@ -16,6 +17,7 @@ const config = <YamlConfig.Config>{
       'inject-additional-transforms': {
         additionalTransforms:
           [
+            { './directives/catchHTTPError.ts': {} },
             { './directives/headers.ts': {} },
             { './directives/no-auth.ts': {} },
             ...(defaultConfig.additionalTransforms || [])
@@ -27,6 +29,7 @@ const config = <YamlConfig.Config>{
   sources: [...sources],
   additionalTypeDefs: [
     splDirectiveTypeDef,
+    catchHTTPErrorDirectiveTypeDef,
     headersDirectiveTypeDef,
     noAuthDirectiveTypeDef,
     additionalTypeDefs,
