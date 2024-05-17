@@ -37,10 +37,21 @@ export const generateTypeDefsAndResolversFromSwagger = (
   let typeDefs = ''
   const resolvers: Resolvers = {}
 
+  const isKeyXprefixSchema = ([key, _value]) => key === 'x-graphql-prefix-schema-with'
   const isKeyXlink = ([key, _value]) => key === 'x-links'
 
   let _actionsItems = getActionsItems(schemas)
 
+  Object.entries(schemas).forEach(([schemaKey, schemaValue]) => {
+    Object.entries(schemaValue)
+      .filter(isKeyXprefixSchema)
+      .forEach(([, prefix]) => {
+        const objToExtend = Object.keys(interfacesWithChildren).includes(schemaKey)
+          ? 'interface'
+          : 'type'
+        typeDefs += `extend ${objToExtend} ${schemaKey} @prefixSchema(prefix: "${prefix}") { dummy: String }\n`
+        })
+  })
   Object.entries(schemas).forEach(([schemaKey, schemaValue]) => {
     Object.entries(schemaValue)
       .filter(isKeyXlink)

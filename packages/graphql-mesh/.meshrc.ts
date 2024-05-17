@@ -3,6 +3,7 @@ import ConfigFromSwaggers from './utils/ConfigFromSwaggers'
 import { splDirectiveTypeDef } from 'directive-spl'
 import { headersDirectiveTypeDef } from './directives/headers'
 import { noAuthDirectiveTypeDef } from './directives/no-auth'
+import { prefixSchemaDirectiveTypeDef } from './directives/prefixSchema'
 
 const configFromSwaggers = new ConfigFromSwaggers()
 const { defaultConfig, additionalTypeDefs, sources } =
@@ -18,6 +19,7 @@ const config = <YamlConfig.Config>{
           [
             { './directives/headers.ts': {} },
             { './directives/no-auth.ts': {} },
+            { './directives/prefixSchema.ts': {} },
             ...(defaultConfig.additionalTransforms || [])
           ] || []
       }
@@ -29,6 +31,7 @@ const config = <YamlConfig.Config>{
     splDirectiveTypeDef,
     headersDirectiveTypeDef,
     noAuthDirectiveTypeDef,
+    prefixSchemaDirectiveTypeDef,
     additionalTypeDefs,
     defaultConfig.additionalTypeDefs || ''
   ].filter(Boolean),
