@@ -48,7 +48,7 @@ export default class CatchHTTPErrorDirectiveTransform implements MeshTransform {
 
 export const catchHTTPErrorDirectiveTypeDef: string = /* GraphQL */ `
   """
-  This directive is used to hide an error in the GraphQL console
+  This directive is used to catch functional errors and prevent them from stacking in the errors root context.
   """
   directive @catch on FIELD
 `
