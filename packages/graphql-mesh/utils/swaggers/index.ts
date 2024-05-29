@@ -50,6 +50,11 @@ export const generateTypeDefsAndResolversFromSwagger = (
           ? 'interface'
           : 'type'
         typeDefs += `extend ${objToExtend} ${schemaKey} @prefixSchema(prefix: "${prefix}") { dummy: String }\n`
+        if (objToExtend === "interface") {
+          interfacesWithChildren[schemaKey].forEach((children) => {
+            typeDefs += `extend type ${children} { dummy: String }\n`
+          })
+        }
         })
   })
   Object.entries(schemas).forEach(([schemaKey, schemaValue]) => {

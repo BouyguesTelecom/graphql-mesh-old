@@ -24,5 +24,5 @@ export const prefixSchemaDirectiveTypeDef: string = /* GraphQL */ `
   """
   This directive is used to prefix a schema name using the custom field "x-graphql-prefix-schema-with"
   """
-  directive @prefixSchema(prefix: String) on OBJECT
+  directive @prefixSchema(prefix: String) on OBJECT | INTERFACE
 `
