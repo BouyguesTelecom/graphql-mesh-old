@@ -136,7 +136,7 @@ export const generateTypeDefsAndResolversFromSwagger = (
 
                   if (paramsToSend.length) {
                     paramsToSend.forEach((param) => {
-                      args[param] = ''
+                      args[param] = '0'
                     })
                   }
 
