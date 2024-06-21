@@ -1,13 +1,17 @@
 import { globSync } from 'glob'
 import { readFileSync } from 'node:fs'
-import { Catalog, Spec, SwaggerName, ConfigExtension } from '../types'
-import { getConfig, getSourceName, getSourceOpenapiEnpoint } from './config'
-import { getAvailableTypes } from './swaggers'
+import { Catalog, Spec, ConfigExtension } from '../types'
+import {
+  getConfig,
+  getSourceName,
+  getSourceOpenapiEnpoint,
+  getSourceTransforms
+} from './parseYamlConfig'
 import { mergeObjects } from './helpers'
-import { generateTypeDefsAndResolversFromSwagger } from './swaggers'
+import { generateTypeDefsAndResolversFromSwagger } from './generateTypeDefsAndResolvers'
 
 export default class ConfigFromSwaggers {
-  swaggers: SwaggerName[] = []
+  swaggers: string[] = []
   specs: Spec[] = []
   catalog: Catalog = {}
   interfacesWithChildren: { [key: string]: string[] } = {}
@@ -27,7 +31,15 @@ export default class ConfigFromSwaggers {
           content?.['application/json']?.schema['$ref'] ?? content?.['*/*']?.schema['$ref']
         const schema = ref?.replace('#/components/schemas/', '')
         if (schema) {
-          acc[path] = [query?.operationId || '', schema, this.swaggers[i]]
+          if (!acc[path]) {
+            acc[path] = {
+              operationId: query.operationId,
+              type: schema,
+              swaggers: [this.swaggers[i]]
+            }
+          } else {
+            acc[path].swaggers.push(this.swaggers[i])
+          }
         }
       })
       return acc
@@ -65,7 +77,25 @@ export default class ConfigFromSwaggers {
   }
 
   createTypeDefsAndResolvers() {
-    const availableTypes = getAvailableTypes(this.specs)
+    if (this.config.sources) {
+      this.specs.forEach((spec, index) => {
+        // Suffix each schema name by the swagger version if there is a "rename" transform
+        if (
+          spec.components &&
+          this.config.sources[index]?.transforms?.find(
+            (transform) => transform.rename !== undefined
+          )
+        ) {
+          const xVersion = this.config.sources[index].name.split('@')[1].split('.')[0]
+          const schemasWithSuffix = {}
+          Object.entries(spec.components.schemas).forEach(([key, schema]) => {
+            schemasWithSuffix[`${key}_v${xVersion}`] = schema
+          })
+          spec.components.schemas = schemasWithSuffix
+        }
+      })
+    }
+    const availableTypes = this.getAvailableTypes(this.specs)
     const typeDefs = /* GraphQL */ `
       type LinkItem {
         rel: String
@@ -108,14 +138,13 @@ export default class ConfigFromSwaggers {
                 ?.operationHeaders || {})
             }
           }
-        }
+        },
+        transforms: getSourceTransforms(source, this.config)
       })) || []
     )
   }
 
-  /*
-   * Get sources that are not openapi
-   */
+  // Get sources that are not openapi
   getOtherSources() {
     return (
       this.config.sources?.filter(
@@ -124,12 +153,7 @@ export default class ConfigFromSwaggers {
     )
   }
 
-  /**
-   * Get additional type definitions, resolvers, sources from swaggers and default config
-   *
-   * @returns {ConfigExtension} - defaultConfig, additionalTypeDefs, additionalResolvers, sources
-   */
-
+  // Create Mesh config
   getMeshConfigFromSwaggers(): {
     defaultConfig: any
     additionalTypeDefs: string
@@ -144,4 +168,8 @@ export default class ConfigFromSwaggers {
       sources: [...this.getOpenApiSources(), ...this.getOtherSources()]
     }
   }
+
+  // Get all schema names from all swaggers
+  getAvailableTypes = (specs: Spec[]) =>
+    specs.flatMap((spec) => Object.keys(spec.components?.schemas ?? {}))
 }

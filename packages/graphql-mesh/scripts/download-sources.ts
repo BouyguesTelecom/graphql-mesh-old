@@ -1,5 +1,5 @@
 import { readFileOrUrl, DefaultLogger } from '@graphql-mesh/utils'
-import { getConfig } from '../utils/config'
+import { getConfig } from '../utils/parseYamlConfig'
 import { writeFileSync, existsSync, mkdirSync } from 'node:fs'
 import { fetch } from '@whatwg-node/fetch'
 const logger = new DefaultLogger()
@@ -10,17 +10,12 @@ const config = getConfig()
 const sources = config?.sources?.filter((source) => source?.handler?.openapi) || []
 const swaggers = sources.map((source) => source?.handler?.openapi?.source) || []
 
-/**
- * Get the name of generated from the source object
- * @param {Record<string, unknown>} source
- * @returns {string | undefined}
- */
 const getFileName = (url: string): string | undefined => {
   return sources.find((source) => source?.handler?.openapi?.source === url)?.name
 }
 
 /**
- * Download the swagger from the given URL and save it to the sources folder
+ * Download one swagger from the given URL and save it to the sources folder
  * @param {string} url
  */
 const downSwaggerFromUrl = async (url: string | undefined, index: string): Promise<void> => {

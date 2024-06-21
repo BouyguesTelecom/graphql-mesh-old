@@ -1,19 +1,19 @@
 import { type OpenAPIV3 } from 'openapi-types'
 import { YamlConfig } from '@graphql-mesh/types'
 
-type SwaggerName = string
 type Spec = OpenAPIV3.Document
 type Path = keyof Spec['paths']
-type OperationId = string
 type Resolvers = YamlConfig.Config['additionalResolvers'] | {}
-/**
- * Catalog of all operations
- */
-type Catalog = Record<Path, [OperationId, string, SwaggerName]>
-
+type CatalogContent = { operationId: string; type: string; swaggers: string[] }
+type Catalog = Record<Path, CatalogContent>
+type XLink = {
+  rel: string
+  type: string
+  hrefPattern: string
+}
 type ConfigExtension = {
-  /** Additional type definitions */
+  // Additional type definitions
   typeDefs: string
-  /** Resolvers */
+  // Additional resolvers
   resolvers: Resolvers
 }

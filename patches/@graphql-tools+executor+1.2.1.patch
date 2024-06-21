@@ -1,29 +1,34 @@
 diff --git a/node_modules/@graphql-tools/executor/cjs/execution/execute.js b/node_modules/@graphql-tools/executor/cjs/execution/execute.js
 old mode 100644
 new mode 100755
-index 791e3df..4636e0f
+index 791e3df..b6a78f0
 --- a/node_modules/@graphql-tools/executor/cjs/execution/execute.js
 +++ b/node_modules/@graphql-tools/executor/cjs/execution/execute.js
-@@ -629,7 +629,8 @@ function completeAbstractValue(exeContext, returnType, fieldNodes, info, path, r
+@@ -629,7 +629,10 @@ function completeAbstractValue(exeContext, returnType, fieldNodes, info, path, r
  }
  function ensureValidRuntimeType(runtimeTypeName, exeContext, returnType, fieldNodes, info, result) {
      if (runtimeTypeName == null) {
 -        throw (0, utils_1.createGraphQLError)(`Abstract type "${returnType.name}" must resolve to an Object type at runtime for field "${info.parentType.name}.${info.fieldName}". Either the "${returnType.name}" type should provide a "resolveType" function or each possible type should provide an "isTypeOf" function.`, { nodes: fieldNodes });
-+        // FIXME: Find a better way to solve the case when runtimeTypeName is null
-+        runtimeTypeName = returnType.astNode.directives[0].arguments[1].value.value.split(':')[0].replace('{', '').replaceAll('"', '')
++        const suffix = returnType.name.split('_')[1]
++        runtimeTypeName = Object.values(JSON.parse(returnType.astNode.directives
++          .find(d => d.name.value === "discriminator").arguments
++          .find(a => a.name.value === "mapping").value.value))[0] + '_' + suffix
      }
      // releases before 16.0.0 supported returning `GraphQLObjectType` from `resolveType`
      // TODO: remove in 17.0.0 release
-@@ -640,7 +641,11 @@ function ensureValidRuntimeType(runtimeTypeName, exeContext, returnType, fieldNo
+@@ -640,6 +643,15 @@ function ensureValidRuntimeType(runtimeTypeName, exeContext, returnType, fieldNo
          throw (0, utils_1.createGraphQLError)(`Abstract type "${returnType.name}" must resolve to an Object type at runtime for field "${info.parentType.name}.${info.fieldName}" with ` +
              `value ${(0, utils_1.inspect)(result)}, received "${(0, utils_1.inspect)(runtimeTypeName)}".`);
      }
--    const runtimeType = exeContext.schema.getType(runtimeTypeName);
-+    // Add-on to resolve a type from the mapping argument of a discriminator directive
++    // Resolve type from mapping of discriminator directive when possible
 +    const mappedTypes = JSON.parse(returnType.astNode.directives
 +      .find(d => d.name.value === "discriminator").arguments
 +      .find(a => a.name.value === "mapping").value.value)
-+    const runtimeType = Object.keys(mappedTypes).includes(runtimeTypeName) ? exeContext.schema.getType(mappedTypes[runtimeTypeName]) : exeContext.schema.getType(runtimeTypeName);
++      Object.keys(mappedTypes).forEach((type) => {
++      if (runtimeTypeName.includes(type)) {
++        runtimeTypeName = runtimeTypeName.replace(type, mappedTypes[type])
++      }
++    })
+     const runtimeType = exeContext.schema.getType(runtimeTypeName);
      if (runtimeType == null) {
          throw (0, utils_1.createGraphQLError)(`Abstract type "${returnType.name}" was resolved to a type "${runtimeTypeName}" that does not exist inside the schema.`, { nodes: fieldNodes });
-     }
