@@ -17,113 +17,99 @@ export const generateTypeDefsAndResolversFromSwagger = (
   config: any
 ): ConfigExtension => {
   if (!spec.components) {
-    return {
-      typeDefs: '',
-      resolvers: {}
-    }
+    console.warn('No components found in the swagger file')
+    return { typeDefs: '', resolvers: {} }
   }
 
   const { schemas } = spec.components
-
   if (!schemas) {
-    console.warn('No schemas found in the swagger files')
-
-    return {
-      typeDefs: '',
-      resolvers: {}
-    }
+    console.warn('No schemas found in the swagger file')
+    return { typeDefs: '', resolvers: {} }
   }
 
   let typeDefs = ''
   const resolvers: Resolvers = {}
+  const _actionsItems = getActionsItems(schemas)
 
-  const isKeyXprefixSchema = ([key, _value]) => key === 'x-graphql-prefix-schema-with'
-  const isKeyXlink = ([key, _value]) => key === 'x-links'
-
-  let _actionsItems = getActionsItems(schemas)
+  const isSpecialKey = ([key, _value]) =>
+    key === 'x-links' || key === 'x-graphql-prefix-schema-with'
 
   Object.entries(schemas).forEach(([schemaKey, schemaValue]) => {
     Object.entries(schemaValue)
-      .filter(isKeyXprefixSchema)
-      .forEach(([, prefix]) => {
-        const objToExtend = Object.keys(interfacesWithChildren).includes(schemaKey)
-          ? 'interface'
-          : 'type'
-        typeDefs += `extend ${objToExtend} ${schemaKey} @prefixSchema(prefix: "${prefix}") { dummy: String }\n`
-        if (objToExtend === "interface") {
-          interfacesWithChildren[schemaKey].forEach((children) => {
-            typeDefs += `extend type ${children} { dummy: String }\n`
-          })
-        }
-        })
-  })
-  Object.entries(schemas).forEach(([schemaKey, schemaValue]) => {
-    Object.entries(schemaValue)
-      .filter(isKeyXlink)
-      .forEach(([, schema]) => {
+      .filter(isSpecialKey)
+      .forEach(([, value]) => {
         const trimedSchemaKey = trimLinks(schemaKey)
-        const objToExtend = Object.keys(interfacesWithChildren).includes(trimedSchemaKey)
+        const schemaType = Object.keys(interfacesWithChildren).includes(trimedSchemaKey)
           ? 'interface'
           : 'type'
 
-        typeDefs += `extend ${objToExtend} ${trimedSchemaKey} {\n`
-
-        const xLinksList: {
-          rel: string
-          type: string
-          hrefPattern: string
-        }[] = schema
-
-        let targetedSwaggerName = 'SWAGGER_NOT_FOUND'
-
-        const objResolver: object = {}
-        let _linksItems = ''
-
-        for (const xLink of xLinksList) {
-          const xLinkName = xLink.rel.replaceAll('-', '_').replaceAll(' ', '')
-          const xLinkPath = xLink.hrefPattern
-          let targetedOperationName = 'NAME_NOT_FOUND'
-          let targetedOperationType = 'TYPE_NOT_FOUND'
-
-          const { params: paramsFromLink, anonymizedPath: anonymizedPathFromLink } =
-            anonymizePathAndGetParams(xLinkPath)
-
-          const matchedPathsForLinks = Object.keys(catalog).filter(
-            (key) => anonymizePathAndGetParams(key).anonymizedPath === anonymizedPathFromLink
-          )
-
-          if (matchedPathsForLinks.length) {
-            ;[targetedOperationName, targetedOperationType, targetedSwaggerName] =
-              catalog[matchedPathsForLinks[0]]
-            if (!availableTypes.includes(targetedOperationType)) {
-              targetedOperationType = 'TYPE_NOT_FOUND'
-            }
+        // "x-graphql-prefix-schema-with" extension
+        if (typeof value === 'string') {
+          typeDefs += `extend ${schemaType} ${schemaKey} @prefixSchema(prefix: "${value}") { dummy: String }\n`
+          if (schemaType === 'interface') {
+            interfacesWithChildren[schemaKey].forEach((children) => {
+              typeDefs += `extend type ${children} { dummy: String }\n`
+            })
           }
+        }
 
-          const paramsToSend: string[] = []
-          matchedPathsForLinks.forEach((key) =>
-            paramsToSend.push(...anonymizePathAndGetParams(key).params)
-          )
+        // "x-links" extension
+        if (typeof value === 'object') {
+          typeDefs += `extend ${schemaType} ${trimedSchemaKey} {\n`
 
-          const query = targetedOperationName
-          const source = getSourceName(targetedSwaggerName, config)
+          const xLinksList: {
+            rel: string
+            type: string
+            hrefPattern: string
+          }[] = value
 
-          if (
-            targetedOperationType !== 'TYPE_NOT_FOUND' &&
-            !(trimedSchemaKey !== targetedOperationType && xLinkName === 'self')
-          ) {
-            typeDefs += `${xLinkName}: ${targetedOperationType}\n`
+          let matchedSwagger = 'NOT_FOUND'
 
-            _linksItems += /* GraphQL */ `
-              ${xLinkName}
-              {
-                href
+          const subResolver: object = {}
+          let _linksItems = ''
+
+          for (const xLink of xLinksList) {
+            const xLinkName = xLink.rel.replaceAll('-', '_').replaceAll(' ', '')
+            const xLinkPath = xLink.hrefPattern
+
+            let matchedName = 'NOT_FOUND'
+            let matchedType = 'NOT_FOUND'
+
+            const { params: _, anonymizedPath: anonymizedPathFromLink } =
+              anonymizePathAndGetParams(xLinkPath)
+
+            const matchedPath = Object.keys(catalog).filter(
+              (key) => anonymizePathAndGetParams(key).anonymizedPath === anonymizedPathFromLink
+            )[0]
+
+            if (matchedPath) {
+              ;[matchedName, matchedType, matchedSwagger] = catalog[matchedPath]
+              if (!availableTypes.includes(matchedType)) {
+                matchedType = 'NOT_FOUND'
               }
-            `
-            objResolver[xLinkName] = {
-              selectionSet:
-                _actionsItems !== ''
-                  ? /* GraphQL */ `
+            }
+
+            const paramsToSend = anonymizePathAndGetParams(matchedPath).params
+            const query = matchedName
+            const source = getSourceName(matchedSwagger, config)
+
+            if (
+              matchedType !== 'NOT_FOUND' &&
+              !(trimedSchemaKey !== matchedType && xLinkName === 'self')
+            ) {
+              typeDefs += `${xLinkName}: ${matchedType}\n`
+
+              _linksItems += /* GraphQL */ `
+                ${xLinkName}
+                {
+                  href
+                }
+              `
+
+              subResolver[xLinkName] = {
+                selectionSet:
+                  _actionsItems !== ''
+                    ? /* GraphQL */ `
                 {
                   _links {
                     ${_linksItems}
@@ -131,153 +117,116 @@ export const generateTypeDefsAndResolversFromSwagger = (
                   _actions {
                     ${_actionsItems}
                   }
-                }
-              `
-                  : /* GraphQL */ ` {
-                _links {
-                  ${_linksItems}
-                }
-              }
-              `,
-              resolve: (root: any, args: any, context: any, info: any) => {
-                const hateoasLink: any = Object.entries(root._links).find(
-                  (item) => item[0] === xLinkName
-                )?.[1]
+                }`
+                    : /* GraphQL */ `
+                {
+                  _links {
+                    ${_linksItems}
+                  }
+                }`,
 
-                if (hateoasLink?.href) {
-                  root = { ...root, followLink: hateoasLink.href }
-                }
+                resolve: (root: any, args: any, context: any, info: any) => {
+                  const hateoasLink: any = Object.entries(root._links).find(
+                    (item) => item[0] === xLinkName
+                  )?.[1]
 
-                if (paramsToSend.length) {
-                  paramsToSend.forEach((param, i) => {
-                    // To avoid params validation error in case of missing params or type mismatch we set default value to '0'
-                    args[param] = root[param] || root[paramsFromLink[i]] || '0'
-                  })
-                }
+                  if (hateoasLink?.href) {
+                    root = { ...root, followLink: hateoasLink.href }
+                  }
 
-                return context[source].Query[query]({
-                  root,
-                  args,
-                  context,
-                  info
-                })
+                  if (paramsToSend.length) {
+                    paramsToSend.forEach((param) => {
+                      args[param] = '0'
+                    })
+                  }
+
+                  return context[source].Query[query]({ root, args, context, info })
+                }
               }
             }
           }
-        }
 
-        /** Resolver for _actionsList */
-        if (Object.keys(objResolver).length && _actionsItems !== '') {
-          typeDefs += /* GraphQL */ `_actionsList: [ActionItem]\n`
-          objResolver['_actionsList'] = {
-            selectionSet: /* GraphQL */ `
+          // Resolvers for _linksList and _actionsList
+          if (Object.keys(subResolver).length) {
+            typeDefs += /* GraphQL */ `_linksList: [LinkItem]\n`
+            subResolver['_linksList'] = {
+              selectionSet: /* GraphQL */ `
               {
-                _actions {
-                  ${_actionsItems}
+                _links {
+                  ${_linksItems}
                 }
-              }
-            `,
-            resolve: (root: any) => {
-              return (
-                Object.keys(root?._actions || {})
-                  .filter((key) => root._actions[key]?.action)
+              }`,
+              resolve: (root: any) => {
+                return Object.keys(root?._links || {})
+                  .filter((key) => root._links[key]?.href)
                   .map((key) => ({
                     rel: key,
-                    action: root._actions[key]?.action
-                  })) || []
-              )
+                    href: root._links[key]?.href
+                  }))
+              }
             }
-          }
-        }
-
-        /** Resolver for _linksList */
-        if (Object.keys(objResolver).length) {
-          typeDefs += /* GraphQL */ `_linksList: [LinkItem]\n`
-          objResolver['_linksList'] = {
-            selectionSet: /* GraphQL */ `
-              {
-                _links {
-                  ${_linksItems}
+            if (_actionsItems !== '') {
+              typeDefs += /* GraphQL */ `_actionsList: [ActionItem]\n`
+              subResolver['_actionsList'] = {
+                selectionSet: /* GraphQL */ `
+                {
+                  _actions {
+                    ${_actionsItems}
+                  }
+                }`,
+                resolve: (root: any) => {
+                  return (
+                    Object.keys(root?._actions || {})
+                      .filter((key) => root._actions[key]?.action)
+                      .map((key) => ({
+                        rel: key,
+                        action: root._actions[key]?.action
+                      })) || []
+                  )
                 }
               }
-            `,
-            resolve: (root: any) => {
-              return Object.keys(root?._links || {})
-                .filter((key) => root._links[key]?.href)
-                .map((key) => ({
-                  rel: key,
-                  href: root._links[key]?.href
-                }))
             }
           }
-        }
 
-        typeDefs += '}\n'
-        typeDefs = typeDefs.replace(`extend ${objToExtend} ${trimedSchemaKey} {\n}\n`, '')
+          typeDefs += '}\n'
 
-        if (targetedSwaggerName !== 'SWAGGER_NOT_FOUND') {
-          resolvers[trimedSchemaKey] = objResolver
-        }
+          // Delete the typedefs section if no new fields have been added
+          typeDefs = typeDefs.replace(`extend ${schemaType} ${trimedSchemaKey} {\n}\n`, '')
 
-        if (
-          objToExtend === 'interface' &&
-          typeDefs !== '' &&
-          resolvers[trimedSchemaKey] !== undefined
-        ) {
-          let varToCompare = trimedSchemaKey
-          interfacesWithChildren[trimedSchemaKey].forEach((type) => {
-            const regex = new RegExp(` ${varToCompare} `, 'g')
-            if (Object.keys(interfacesWithChildren).includes(type) && type !== trimedSchemaKey) {
-              typeDefs += typeDefs
-                .match(/[\s\S]*(^[\s\S]*{[\s\S]*)/m)![1]
-                .replace('type', 'interface')
-                .replace(regex, ` ${type} `)
-              varToCompare = type
-              resolvers[type] ??= {}
-              for (const key in resolvers[trimedSchemaKey]) {
-                resolvers[type][key] = resolvers[trimedSchemaKey][key]
-              }
+          if (matchedSwagger !== 'NOT_FOUND') {
+            resolvers[trimedSchemaKey] = subResolver
+          }
 
-              interfacesWithChildren[type].forEach((t) => {
-                const regex2 = new RegExp(` ${varToCompare} `, 'g')
+          // If an interface has new links, its children need to have these links too
+          if (
+            schemaType === 'interface' &&
+            typeDefs !== '' &&
+            resolvers[trimedSchemaKey] !== undefined
+          ) {
+            let currentKey = trimedSchemaKey
+
+            interfacesWithChildren[trimedSchemaKey].forEach((childKey) => {
+              if (!Object.keys(interfacesWithChildren).includes(childKey)) {
                 typeDefs += typeDefs
                   .match(/[\s\S]*(^[\s\S]*{[\s\S]*)/m)![1]
                   .replace('interface', 'type')
-                  .replace(regex2, ` ${t} `)
-                varToCompare = t
+                  .replace(new RegExp(` ${currentKey} `, 'g'), ` ${childKey} `)
 
-                resolvers[t] ??= {}
-                for (const key in resolvers[type]) {
-                  resolvers[t][key] = resolvers[type][key]
+                resolvers[childKey] ??= {}
+                for (const prop in resolvers[trimedSchemaKey]) {
+                  resolvers[childKey][prop] = resolvers[trimedSchemaKey][prop]
                 }
-              })
-            } if (!Object.keys(interfacesWithChildren).includes(type)) {
-              typeDefs += typeDefs
-                .match(/[\s\S]*(^[\s\S]*{[\s\S]*)/m)![1]
-                .replace('interface', 'type')
-                .replace(regex, ` ${type} `)
-              varToCompare = type
 
-              resolvers[type] ??= {}
-              for (const key in resolvers[trimedSchemaKey]) {
-                resolvers[type][key] = resolvers[trimedSchemaKey][key]
+                currentKey = childKey
               }
-            }
-          })
+            })
 
-          resolvers[trimedSchemaKey].__resolveType = (res, _, schema) => {
-            if (res.__typename !== undefined) {
-              return res.__typename
+            resolvers[trimedSchemaKey].__resolveType = (res, _, schema) => {
+              if (res.__typename) {
+                return res.__typename
+              }
+              return interfacesWithChildren[schema.returnType.name][1]
             }
-
-            if (schema.parentType._fields[schema.fieldName] !== undefined) {
-              //TODO:
-              return interfacesWithChildren[schema.parentType._fields[schema.fieldName].type.name][
-                interfacesWithChildren[schema.parentType._fields[schema.fieldName].type.name]
-                  .length - 1
-              ]
-            }
-            return interfacesWithChildren[schema.fieldName][0]
           }
         }
       })
@@ -286,14 +235,9 @@ export const generateTypeDefsAndResolversFromSwagger = (
   return { typeDefs, resolvers }
 }
 
-/**
- * Return all actions items from swagger schemas
- * @param schemas
- * @returns
- */
 export const getActionsItems = (schemas: OpenAPIV3.ComponentsObject) => {
   let _actionsItems = ''
-  Object.entries(schemas).forEach(([schemaKey, schemaValue]) => {
+  Object.entries(schemas).forEach(([, schemaValue]) => {
     const actions = schemaValue['x-actions'] || []
     if (actions.length) {
       _actionsItems += actions.reduce((acc, item) => {
