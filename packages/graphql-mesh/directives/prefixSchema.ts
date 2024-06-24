@@ -2,7 +2,7 @@ import { GraphQLSchema } from 'graphql'
 import { mapSchema } from '@graphql-tools/utils'
 import { MapperKind } from '@graphql-tools/utils'
 import { getDirective } from '@graphql-tools/utils'
-import { GraphQLObjectType } from 'graphql'
+import { GraphQLObjectType, GraphQLInterfaceType } from 'graphql'
 import { MeshTransform } from '@graphql-mesh/types'
 
 export default class PrefixSchemaDirectiveTransform implements MeshTransform {
@@ -14,6 +14,14 @@ export default class PrefixSchemaDirectiveTransform implements MeshTransform {
             type.name = prefixDirective.prefix + type.name
             const config = type.toConfig()
             return new GraphQLObjectType(config)
+          }
+        },
+        [MapperKind.INTERFACE_TYPE]: type => {
+          const prefixDirective = getDirective(schema, type, 'prefixSchema')?.[0]
+          if (prefixDirective) {
+            type.name = prefixDirective.prefix + type.name
+            const config = type.toConfig()
+            return new GraphQLInterfaceType(config)
           }
         }
       })

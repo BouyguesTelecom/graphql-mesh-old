@@ -3,26 +3,17 @@ import { DefaultLogger } from '@graphql-mesh/utils'
 import { load } from 'js-yaml'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+
 const logger = new DefaultLogger()
 
-/**
- * Load config file from yaml or ts
- * @returns Config
- */
+// Load the config.yaml file
 export const getConfig = (): YamlConfig.Config => {
   logger.info('Loading config file')
   let config: YamlConfig.Config
-  // Load yaml config file
+
   try {
     const configPath = resolve('./config.yaml')
     config = load(readFileSync(configPath, { encoding: 'utf-8' }))
-  } catch (e) {}
-
-  // Load ts config file
-  try {
-    if (!config) {
-      config = require('../../config').default
-    }
   } catch (e) {}
 
   if (!config) {
@@ -33,12 +24,7 @@ export const getConfig = (): YamlConfig.Config => {
   return config
 }
 
-/**
- * Get endpoint from openapi source in config
- * @param source {string}
- * @param config
- * @returns
- */
+// Get the endpoint of a specific openapi source
 export const getSourceOpenapiEnpoint = (
   source: string,
   config: YamlConfig.Config
@@ -47,13 +33,14 @@ export const getSourceOpenapiEnpoint = (
   return data?.handler.openapi?.endpoint
 }
 
-/** Get source name from config
- * @param source {string} - source name
- * @param config  {YamlConfig.Config} - config  object
- * @returns {string} - source name
- *
- */
+// Get the name of a specific source
 export const getSourceName = (source: string, config: YamlConfig.Config): string => {
   const data = config.sources?.find((item) => source.includes(item.name))
-  return data?.name || source
+  return data?.name
+}
+
+// Get the list of transforms of a specific source
+export const getSourceTransforms = (source: string, config: YamlConfig.Config) => {
+  const data = config.sources?.find((item) => source.includes(item.name))
+  return data?.transforms
 }

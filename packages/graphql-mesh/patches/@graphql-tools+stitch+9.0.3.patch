@@ -12,10 +12,12 @@ index 5e752ad..3b487f5 100644
          const currentNamedType = (0, graphql_1.getNamedType)(c.type);
          if (finalNamedType.toString() !== currentNamedType.toString()) {
 diff --git a/node_modules/@graphql-tools/stitch/cjs/typeCandidates.js b/node_modules/@graphql-tools/stitch/cjs/typeCandidates.js
-index c915942..6f02609 100644
+old mode 100644
+new mode 100755
+index c915942..fd09fc4
 --- a/node_modules/@graphql-tools/stitch/cjs/typeCandidates.js
 +++ b/node_modules/@graphql-tools/stitch/cjs/typeCandidates.js
-@@ -119,6 +119,25 @@ function buildTypes({ typeCandidates, directives, stitchingInfo, rootTypeNames,
+@@ -119,6 +119,29 @@ function buildTypes({ typeCandidates, directives, stitchingInfo, rootTypeNames,
              (typeof mergeTypes === 'function' && mergeTypes(typeCandidates[typeName], typeName)) ||
              (Array.isArray(mergeTypes) && mergeTypes.includes(typeName)) ||
              (stitchingInfo != null && typeName in stitchingInfo.mergedTypes)) {
@@ -29,7 +31,11 @@ index c915942..6f02609 100644
 +                    let finalI = candidatesI[0];
 +                    const otherCandidates = candidatesI.slice(1, candidatesI.length).concat(candidatesObj);
 +                    otherCandidates.forEach((otherCandidate) => {
-+                        finalI.type._fields = { ...finalI.type._fields, ...otherCandidate.type._fields };
++                        Object.keys(otherCandidate.type._fields).forEach(field => {
++                          if (!Object.keys(finalI.type._fields).includes(field)) {
++                              finalI.type._fields[field] = otherCandidate.type._fields[field];
++                          }
++                        })
 +                    });
 +                    typeCandidates[typeName] = [finalI];
 +                }
@@ -41,7 +47,7 @@ index c915942..6f02609 100644
              typeMap[typeName] = (0, mergeCandidates_js_1.mergeCandidates)(typeName, typeCandidates[typeName], typeMergingOptions);
          }
          else {
-@@ -128,6 +147,42 @@ function buildTypes({ typeCandidates, directives, stitchingInfo, rootTypeNames,
+@@ -128,6 +151,58 @@ function buildTypes({ typeCandidates, directives, stitchingInfo, rootTypeNames,
              typeMap[typeName] = candidateSelector(typeCandidates[typeName]).type;
          }
      }
@@ -53,29 +59,45 @@ index c915942..6f02609 100644
 +     */
 +    Object.values(typeMap).forEach((type) => {
 +        if (type.constructor.name === "GraphQLObjectType") {
-+            if (type.astNode.interfaces.length !== 0) {
-+                type._interfaces = [];
-+                type.astNode.interfaces.forEach((i) => {
-+                    const typeI = typeMap[i.name.value]
-+                    type._interfaces.push(typeI);
-+                    type._fields = {...type.getFields(), ...typeI.getFields()}
-+                });
-+            }
-+            if (type.astNode.interfaces.length >= 2) {
-+                const firstFields = type._interfaces[0]._fields
-+                type._interfaces.slice(1, type._interfaces.length).forEach((i) => {
-+                    Object.keys(i._fields).forEach((field) => {
-+                        if (field in firstFields) {
-+                            if (i._fields[field].type.constructor.name !== firstFields[field].type.constructor.name ||
-+                                i._fields[field].type.constructor.name === "GraphQLObjectType") {
-+                                i._fields[field] = firstFields[field]
-+                                type._fields[field] = firstFields[field]
-+                            }
-+                        }
-+                        else {
-+                            firstFields[field] = i._fields[field]
-+                        }
++            const typeInterfaces = type.getInterfaces()
++
++            if (typeInterfaces.length !== 0) {
++                type._fields = type.getFields()
++
++                typeInterfaces.forEach(i => {
++                    const iFields = typeMap[i.name].getFields()
++                    Object.keys(iFields).forEach(keyName => {
++                        type._fields[keyName] = iFields[keyName]
 +                    })
++                })
++            }
++
++            if (typeInterfaces.length >= 2) {
++                let uniqueFields = {}
++                let duplicateFields = {}
++
++                typeInterfaces.forEach(i => {
++                  const iFields = typeMap[i.name].getFields()
++                  Object.keys(iFields).forEach(keyName => {
++                      if (uniqueFields[keyName] === undefined) {
++                          uniqueFields[keyName] = "defined"
++                      }
++                      else {
++                          duplicateFields[keyName] = iFields[keyName]
++                      }
++                  })
++                })
++                Object.keys(duplicateFields).forEach(field => {
++                  if (type.getFields()[field] !== undefined) {
++                      type._fields[field] = duplicateFields[field]
++                  }
++                  typeInterfaces.forEach(i => {
++                      const iFields = typeMap[i.name].getFields()
++
++                      if (iFields[field] !== undefined) {
++                          typeMap[i.name]._fields[field] = duplicateFields[field]
++                      }
++                  })
 +                })
 +            }
 +        }

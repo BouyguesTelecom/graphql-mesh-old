@@ -1,0 +1,16 @@
+diff --git a/node_modules/@graphql-tools/merge/cjs/typedefs-mergers/fields.js b/node_modules/@graphql-tools/merge/cjs/typedefs-mergers/fields.js
+index 442943d..e794bcc 100644
+--- a/node_modules/@graphql-tools/merge/cjs/typedefs-mergers/fields.js
++++ b/node_modules/@graphql-tools/merge/cjs/typedefs-mergers/fields.js
+@@ -48,7 +48,7 @@ function preventConflicts(type, a, b, ignoreNullability = false) {
+         const t1 = (0, utils_js_1.extractType)(a.type);
+         const t2 = (0, utils_js_1.extractType)(b.type);
+         if (t1.name.value !== t2.name.value) {
+-            throw new Error(`Field "${b.name.value}" already defined with a different type. Declared as "${t1.name.value}", but you tried to override with "${t2.name.value}"`);
++            return a;
+         }
+         if (!safeChangeForFieldType(a.type, b.type, !ignoreNullability)) {
+             throw new Error(`Field '${type.name.value}.${a.name.value}' changed type from '${aType}' to '${bType}'`);
+diff --git a/node_modules/@graphql-tools/merge/cjs/typedefs-mergers/type.js b/node_modules/@graphql-tools/merge/cjs/typedefs-mergers/type.js
+old mode 100644
+new mode 100755
