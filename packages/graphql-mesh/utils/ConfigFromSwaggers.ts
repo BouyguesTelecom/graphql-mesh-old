@@ -33,11 +33,12 @@ export default class ConfigFromSwaggers {
         if (schema) {
           if (!acc[path]) {
             acc[path] = {
-              operationId: query.operationId,
+              operationIds: [query.operationId],
               type: schema,
               swaggers: [this.swaggers[i]]
             }
           } else {
+            acc[path].operationIds.push(query.operationId)
             acc[path].swaggers.push(this.swaggers[i])
           }
         }
@@ -86,7 +87,7 @@ export default class ConfigFromSwaggers {
             (transform) => transform.rename !== undefined
           )
         ) {
-          const xVersion = this.config.sources[index].name.split('@')[1].split('.')[0]
+          const xVersion = spec.info.version.split('.')[0]
           const schemasWithSuffix = {}
           Object.entries(spec.components.schemas).forEach(([key, schema]) => {
             schemasWithSuffix[`${key}_v${xVersion}`] = schema

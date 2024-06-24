@@ -1,0 +1,14 @@
+diff --git a/node_modules/@graphql-mesh/transform-rename/cjs/bareRename.js b/node_modules/@graphql-mesh/transform-rename/cjs/bareRename.js
+index 7e430cf..76a818e 100644
+--- a/node_modules/@graphql-mesh/transform-rename/cjs/bareRename.js
++++ b/node_modules/@graphql-mesh/transform-rename/cjs/bareRename.js
+@@ -84,6 +84,9 @@ class BareRename {
+         if (!mapKeys?.length)
+             return null;
+         return mapKeys.reduce((newName, mapKey) => {
++            if (!newName) {
++              return null
++            }
+             if (mapKeyIsString) {
+                 const str = map.get(mapKey);
+                 // avoid re-iterating over strings that have already been renamed

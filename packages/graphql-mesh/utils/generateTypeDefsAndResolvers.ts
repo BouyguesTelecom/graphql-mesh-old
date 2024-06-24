@@ -85,7 +85,7 @@ export const generateTypeDefsAndResolversFromSwagger = (
 
           const xLinkList: XLink[] = value
           let matchedLinkItems: CatalogContent = {
-            operationId: undefined,
+            operationIds: undefined,
             type: undefined,
             swaggers: undefined
           }
@@ -106,7 +106,7 @@ export const generateTypeDefsAndResolversFromSwagger = (
             }
 
             const paramsToSend = anonymizePathAndGetParams(matchedPath).params
-            const operationId = matchedLinkItems.operationId
+            const operationIds = matchedLinkItems.operationIds
             const sourceSwaggers = matchedLinkItems.swaggers
 
             const highestVersion = getHighestVersionAvailable(availableTypes, matchedLinkItems.type)
@@ -167,20 +167,16 @@ export const generateTypeDefsAndResolversFromSwagger = (
                       const versionedQueryName = `${Object.keys(context[versionedSource]).find(
                         (key) => key.includes('Query')
                       )}`
-                      const versionedQuery = `${operationId}_v${currentVersion}`
 
-                      if (context[versionedSource][versionedQueryName][versionedQuery]) {
-                        return context[versionedSource][versionedQueryName][versionedQuery]({
-                          root,
-                          args,
-                          context,
-                          info
-                        })
-                      } else {
-                        return context[versionedSource][versionedQueryName][
-                          Object.keys(context[versionedSource][versionedQueryName])[0]
-                        ]({ root, args, context, info })
-                      }
+                      const operationId = operationIds[sourceSwaggers.indexOf(availableSwaggers[0])]
+                      const versionedOperationId = `${operationId}_v${currentVersion}`
+
+                      return context[versionedSource][versionedQueryName][versionedOperationId]({
+                        root,
+                        args,
+                        context,
+                        info
+                      })
                     }
                   }
                 }
@@ -236,12 +232,17 @@ export const generateTypeDefsAndResolversFromSwagger = (
                   }
 
                   return context[sourceSwaggers[0]]
-                    ? context[sourceSwaggers[0]].Query[operationId]({ root, args, context, info })
+                    ? context[sourceSwaggers[0]].Query[operationIds[0]]({
+                        root,
+                        args,
+                        context,
+                        info
+                      })
                     : context[
                         sourceSwaggers[0]
                           .split('/')
                           [sourceSwaggers[0].split('/').length - 1].split('.')[0]
-                      ].Query[operationId]({ root, args, context, info })
+                      ].Query[operationIds[0]]({ root, args, context, info })
                 }
               }
             }
