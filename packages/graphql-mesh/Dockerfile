@@ -27,11 +27,9 @@ ENV NODE_TLS_REJECT_UNAUTHORIZED=0
 ENV TS_NODE_FILES=true
 ENV TS_NODE_TRANSPILE_ONLY=true
 
-# swaggers sources
-VOLUME /app/sources
-VOLUME /app/config.yaml
-VOLUME /app/transforms
 VOLUME /app/plugins
 VOLUME /app/resolvers
+VOLUME /app/sources
+VOLUME /app/transforms
 
 CMD [ "npm", "run", "serve" ]
