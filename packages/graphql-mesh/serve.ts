@@ -1,5 +1,5 @@
 import { createServer } from 'node:http'
-import { createBuiltMeshHTTPHandler } from './.mesh'
+import { createBuiltMeshHTTPHandler } from './var/.mesh'
 import { getConfig } from './utils/parseYamlConfig'
 const config = getConfig()
 
