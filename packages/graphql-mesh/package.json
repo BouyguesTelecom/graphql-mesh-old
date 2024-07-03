@@ -13,10 +13,10 @@
     "@graphql-mesh/graphql": "^0.96.2",
     "@graphql-mesh/merger-stitching": "^0.96.2",
     "@graphql-mesh/openapi": "^0.97.4",
+    "@graphql-mesh/plugin-prometheus": "^0.96.2",
     "@graphql-mesh/transform-filter-schema": "^0.96.2",
     "@graphql-mesh/transform-naming-convention": "^0.96.2",
     "@graphql-mesh/transform-rename": "^0.96.2",
-    "@graphql-mesh/plugin-prometheus": "^0.96.2",
     "@graphql-mesh/transform-type-merging": "^0.96.2",
     "@graphql-tools/schema": "^10.0.2",
     "@graphql-tools/utils": "^10.0.12",
@@ -26,6 +26,7 @@
     "graphql": "^16.8.1",
     "inject-additional-transforms": "file:./local-pkg/inject-additional-transforms-1.0.0.tgz",
     "patch-package": "^8.0.0",
+    "prom-client": "^15.1.3",
     "sucrase": "^3.35.0"
   },
   "devDependencies": {
