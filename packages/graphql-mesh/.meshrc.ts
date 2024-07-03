@@ -44,7 +44,26 @@ const config = <YamlConfig.Config>{
   ].filter(Boolean),
   plugins: [
     { 'filter-null-plugin': { filter: defaultConfig.filterNull ?? false } },
-    ...(defaultConfig.plugins || [])
+    ...(defaultConfig.plugins || []),
+    {
+      "prometheus": {
+        "requestCount": true,
+        "requestSummary": true,
+        "parse": true,
+        "validate": true,
+        "contextBuilding": true,
+        "execute": true,
+        "errors": true,
+        "delegation": true,
+        "fetchMetrics": true,
+        "fetchRequestHeaders": true,
+        "fetchResponseHeaders": true,
+        "httpRequestHeaders": true,
+        "httpResponseHeaders": true,
+        "deprecatedFields": true,
+        "endpoint": "/metrics"
+      }
+    }
   ]
 }
 
