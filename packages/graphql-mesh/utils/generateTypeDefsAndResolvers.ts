@@ -103,6 +103,12 @@ export const generateTypeDefsAndResolversFromSwagger = (
 
             if (matchedPath) {
               matchedLinkItems = catalog[matchedPath]
+            } else {
+              matchedLinkItems = {
+                operationIds: undefined,
+                type: undefined,
+                swaggers: undefined
+              }
             }
 
             const paramsToSend = anonymizePathAndGetParams(matchedPath).params
