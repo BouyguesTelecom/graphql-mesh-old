@@ -9,7 +9,8 @@
       "runtimeArgs": ["run", "start"],
       "env": {
         "DEBUG": "1",
-        "ENDPOINT": "http://localhost:5000"
+        "ENDPOINT": "http://localhost:5000",
+        "MESH_ARTIFACTS_DIRNAME": "var/.mesh"
       },
       "cwd": "${workspaceFolder}"
     }
