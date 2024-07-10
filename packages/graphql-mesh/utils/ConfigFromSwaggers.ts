@@ -48,8 +48,7 @@ export default class ConfigFromSwaggers {
   }
 
   getAvailableTypes() {
-    const res = this.specs.flatMap((spec) => Object.keys(spec.components?.schemas ?? {}))
-    return res.filter((item, index) => res.indexOf(item) === index).sort((a, b) => a.localeCompare(b))
+    return this.specs.flatMap((spec) => Object.keys(spec.components?.schemas ?? {}))
   }
 
   getInterfacesWithChildren() {

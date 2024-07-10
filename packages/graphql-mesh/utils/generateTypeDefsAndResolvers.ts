@@ -248,6 +248,7 @@ export const generateTypeDefsAndResolversFromSwagger = (
                         sourceSwaggers[0]
                           .split('/')
                           [sourceSwaggers[0].split('/').length - 1].split('.')[0]
+                          .substring(2)
                       ].Query[operationIds[0]]({ root, args, context, info })
                 }
               }
