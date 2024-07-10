@@ -12,9 +12,7 @@ index 5e752ad..3b487f5 100644
          const currentNamedType = (0, graphql_1.getNamedType)(c.type);
          if (finalNamedType.toString() !== currentNamedType.toString()) {
 diff --git a/node_modules/@graphql-tools/stitch/cjs/typeCandidates.js b/node_modules/@graphql-tools/stitch/cjs/typeCandidates.js
-old mode 100644
-new mode 100755
-index c915942..fd09fc4
+index c915942..d28ed66 100644
 --- a/node_modules/@graphql-tools/stitch/cjs/typeCandidates.js
 +++ b/node_modules/@graphql-tools/stitch/cjs/typeCandidates.js
 @@ -119,6 +119,29 @@ function buildTypes({ typeCandidates, directives, stitchingInfo, rootTypeNames,
@@ -32,7 +30,7 @@ index c915942..fd09fc4
 +                    const otherCandidates = candidatesI.slice(1, candidatesI.length).concat(candidatesObj);
 +                    otherCandidates.forEach((otherCandidate) => {
 +                        Object.keys(otherCandidate.type._fields).forEach(field => {
-+                          if (!Object.keys(finalI.type._fields).includes(field)) {
++                          if (finalI.type._fields[field] === undefined) {
 +                              finalI.type._fields[field] = otherCandidate.type._fields[field];
 +                          }
 +                        })

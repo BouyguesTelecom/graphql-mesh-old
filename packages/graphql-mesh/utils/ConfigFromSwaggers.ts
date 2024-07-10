@@ -47,6 +47,11 @@ export default class ConfigFromSwaggers {
     }, {} as Catalog)
   }
 
+  getAvailableTypes() {
+    const res = this.specs.flatMap((spec) => Object.keys(spec.components?.schemas ?? {}))
+    return res.filter((item, index) => res.indexOf(item) === index).sort((a, b) => a.localeCompare(b))
+  }
+
   getInterfacesWithChildren() {
     this.specs.forEach((s) => {
       const { schemas } = s.components || {}
@@ -96,7 +101,6 @@ export default class ConfigFromSwaggers {
         }
       })
     }
-    const availableTypes = this.getAvailableTypes(this.specs)
     const typeDefs = /* GraphQL */ `
       type LinkItem {
         rel: String
@@ -107,14 +111,20 @@ export default class ConfigFromSwaggers {
         action: String
       }
     `
+
+    const availableTypes = this.getAvailableTypes()
+    const interfacesWithChildren = this.getInterfacesWithChildren()
+    const catalog = this.catalog
+    const config = this.config
+
     return this.specs.reduce(
       (acc, spec) => {
         const { typeDefs, resolvers } = generateTypeDefsAndResolversFromSwagger(
           spec,
           availableTypes,
-          this.getInterfacesWithChildren(),
-          this.catalog,
-          this.config
+          interfacesWithChildren,
+          catalog,
+          config
         )
         acc.typeDefs += typeDefs
         acc.resolvers = mergeObjects(acc.resolvers, resolvers)
@@ -169,8 +179,4 @@ export default class ConfigFromSwaggers {
       sources: [...this.getOpenApiSources(), ...this.getOtherSources()]
     }
   }
-
-  // Get all schema names from all swaggers
-  getAvailableTypes = (specs: Spec[]) =>
-    specs.flatMap((spec) => Object.keys(spec.components?.schemas ?? {}))
 }
