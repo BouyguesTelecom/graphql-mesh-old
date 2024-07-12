@@ -10,13 +10,15 @@ import {
 } from './helpers'
 
 /**
- * This function creates, for one Swagger file, the additional typeDefs and resolvers required to handle HATEOAS links and the prefixation of some schemas
+ * This function creates, for one Swagger file, the additional typeDefs and resolvers required to handle
+ * HATEOAS links and the prefixation of some schemas.
+ *
  * @param spec - A Swagger file
- * @param availableTypes - An exhaustive list of the types available across the entire conf
- * @param interfacesWithChildren - An exhaustive list of the all the interfaces, with their children
- * @param catalog - An object, where the keys are operation paths and the values are: {the corresponding operationId, the type returned by the operation, the list of swaggers containing this path}
+ * @param availableTypes - An exhaustive list of the types available across the entire config
+ * @param interfacesWithChildren - An exhaustive list of all the interfaces, with their children
+ * @param catalog - An object, where the keys are operation paths and the values are: {the corresponding operationIds, the type returned by the operation, the list of swaggers containing this path}
  * @param config - The default config
- * @returns an object with two elements: the additional typeDefs and the additional resolvers
+ * @returns {ConfigExtension} An object with two elements: the additional typeDefs and the additional resolvers
  */
 export const generateTypeDefsAndResolversFromSwagger = (
   spec: Spec,
@@ -25,6 +27,7 @@ export const generateTypeDefsAndResolversFromSwagger = (
   catalog: Catalog,
   config: any
 ): ConfigExtension => {
+  // If there are no schemas in the components section, log a warning and return empty typeDefs and resolvers
   if (!spec.components?.schemas) {
     console.warn('No components found in the swagger file')
     return { typeDefs: '', resolvers: {} }
@@ -35,20 +38,22 @@ export const generateTypeDefsAndResolversFromSwagger = (
   let typeDefs = ''
   const resolvers: Resolvers = {}
 
+  // Iterate over each schema in the Swagger file
   Object.entries(schemas).forEach(([schemaKey, schemaValue]) => {
     Object.entries(schemaValue)
+      // Filter for special keys such as 'x-links' and 'x-graphql-prefix-schema-with'
       .filter(isSpecialKey)
       .forEach(([key, value]) => {
-        /**
-         * Schema prefixation processing:
-         * Add a prefixSchema directive for each schema having the "x-graphql-prefix-schema-with" key
-         */
+
+        // HANDLE SCHEMA PREFIXATION
         if (key === 'x-graphql-prefix-schema-with') {
           const schemaType = Object.keys(interfacesWithChildren).includes(schemaKey)
             ? 'interface'
             : 'type'
 
+          // Add a prefixSchema directive to the type definition
           typeDefs += `extend ${schemaType} ${schemaKey} @prefixSchema(prefix: "${value}") { dummy: String }\n`
+
           // If it's an interface, prefix each of its children too
           if (schemaType === 'interface') {
             interfacesWithChildren[schemaKey].forEach((children) => {
@@ -63,69 +68,7 @@ export const generateTypeDefsAndResolversFromSwagger = (
           }
         }
 
-        /**
-         * HATEOAS links processing:
-         * Add additional properties for each schema having the "x-links" key
-         *
-         * Explanations:
-         * GraphQL Mesh can't understand HATEOAS links natively.
-         * To translate them to GraphQL Mesh, we have to create an additional type definition
-         * and an additional resolver for each HATEOAS link.
-         *
-         * Example:
-         * If we have one HATEOAS link defined like this...
-         * ```
-         *      "Vehicle": {
-         *        ...,
-         *        "properties": {
-         *          "_links": {
-         *            "$ref": "#/components/schemas/VehicleLinks"
-         *          }
-         *        }
-         *      },
-         *      "VehicleLinks": {
-         *        ...,
-         *        "properties": {
-         *          "linkToFollow": {
-         *            "$ref": "#/components/schemas/XLink"
-         *          }
-         *        },
-         *        "x-links": [
-         *          {
-         *            "rel": "linkToFollow",
-         *            "type": "application/json",
-         *            "hrefPattern": "/the/link/path"
-         *          }
-         *        ]
-         *      }
-         * ```
-         * ...we will have to create an additional type definition and and additional resolver like this:
-         * typeDef
-         * ```
-         *      extend type Vehicle {
-         *        linkToFollow: CorrespondingPath
-         *      }
-         * ```
-         * resolver
-         * ```
-         *      {
-         *        Vehicle: {
-         *          linkToFollow: {
-         *            selectionSet: ...,
-         *            resolve: ...
-         *          }
-         *        }
-         *      }
-         * ```
-         *
-         * Strategy:
-         * The main difficulty is that, while in HATEOAS a link is referenced by its path,
-         * in GraphQL Mesh a "link" represented by a type definition is referenced by the
-         * type returned by the corresponding operation (as seen above).
-         * Therefore, we need to have a catalog of all the path and corresponding type
-         * available in our spec. Then we can map each patch to the type returned by its
-         * operation.
-         */
+        // HANDLE HATEOAS LINKS PROCESSING
         if (key === 'x-links') {
           const trimedSchemaKey = trimLinks(schemaKey)
           const schemaType = Object.keys(interfacesWithChildren).includes(trimedSchemaKey)
@@ -145,11 +88,13 @@ export const generateTypeDefsAndResolversFromSwagger = (
             swaggers: undefined
           }
 
+          // Process each HATEOAS link in the x-links array
           for (const xLink of xLinkList) {
-            // Replace illegal characters
+            // Replace illegal characters in the link name
             const xLinkName = xLink.rel.replaceAll('-', '_').replaceAll(' ', '')
             const xLinkPath = xLink.hrefPattern
 
+            // Find the corresponding path in the catalog
             const matchedPath = Object.keys(catalog).filter(
               (key) =>
                 anonymizePathAndGetParams(key).anonymizedPath ===
@@ -179,7 +124,7 @@ export const generateTypeDefsAndResolversFromSwagger = (
                   href
                 }
               `
-              // Add a new link for the highest version available & all the smaller versions available too
+              // Add a new link for the highest version available and all the smaller versions available too
               for (let currentVersion = highestVersion; currentVersion >= 0; currentVersion--) {
                 if (availableTypes.includes(`${matchedLinkItems.type}_v${currentVersion}`)) {
                   const currentLink = `${xLinkName}_v${currentVersion}`
