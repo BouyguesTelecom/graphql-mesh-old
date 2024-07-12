@@ -12,7 +12,7 @@ index 5e752ad..3b487f5 100644
          const currentNamedType = (0, graphql_1.getNamedType)(c.type);
          if (finalNamedType.toString() !== currentNamedType.toString()) {
 diff --git a/node_modules/@graphql-tools/stitch/cjs/typeCandidates.js b/node_modules/@graphql-tools/stitch/cjs/typeCandidates.js
-index c915942..d6fa958 100644
+index c915942..c2a322a 100644
 --- a/node_modules/@graphql-tools/stitch/cjs/typeCandidates.js
 +++ b/node_modules/@graphql-tools/stitch/cjs/typeCandidates.js
 @@ -119,6 +119,29 @@ function buildTypes({ typeCandidates, directives, stitchingInfo, rootTypeNames,
@@ -38,7 +38,7 @@ index c915942..d6fa958 100644
 +                    typeCandidates[typeName] = [finalI];
 +                }
 +                if (typeName === "Date") {
-+                    typeCandidates[typeName] = candidates.filter((c) => c.type.constructor.name === "GraphQLScalarType")
++                    typeCandidates[typeName] = candidates.filter((c) => c.type.constructor.name === "GraphQLScalarType");
 +                }
 +            }
 +
@@ -55,32 +55,32 @@ index c915942..d6fa958 100644
 +     */
 +    Object.values(typeMap).forEach((type) => {
 +        if (type.constructor.name === "GraphQLObjectType") {
-+            const typeInterfaces = type.getInterfaces()
++            const typeInterfaces = type.getInterfaces();
 +
 +            if (typeInterfaces.length >= 2) {
-+                let uniqueFields = {}
-+                let duplicateFields = {}
++                let uniqueFields = {};
++                let duplicateFields = {};
 +
 +                typeInterfaces.forEach(i => {
-+                  const iFields = typeMap[i.name].getFields()
++                  const iFields = typeMap[i.name].getFields();
 +                  Object.keys(iFields).forEach(keyName => {
 +                      if (uniqueFields[keyName] === undefined) {
-+                          uniqueFields[keyName] = "defined"
++                          uniqueFields[keyName] = "defined";
 +                      }
 +                      else {
-+                          duplicateFields[keyName] = iFields[keyName]
++                          duplicateFields[keyName] = iFields[keyName];
 +                      }
 +                  })
 +                })
 +                Object.keys(duplicateFields).forEach(field => {
 +                  if (type.getFields()[field] !== undefined) {
-+                      type._fields[field] = duplicateFields[field]
++                      type._fields[field] = duplicateFields[field];
 +                  }
 +                  typeInterfaces.forEach(i => {
-+                      const iFields = typeMap[i.name].getFields()
++                      const iFields = typeMap[i.name].getFields();
 +
 +                      if (iFields[field] !== undefined) {
-+                          typeMap[i.name]._fields[field] = duplicateFields[field]
++                          typeMap[i.name]._fields[field] = duplicateFields[field];
 +                      }
 +                  })
 +                })
@@ -94,15 +94,15 @@ index c915942..d6fa958 100644
 +     */
 +    Object.values(typeMap).forEach((type) => {
 +      if (type.constructor.name === "GraphQLObjectType") {
-+          const typeInterfaces = type.getInterfaces()
++          const typeInterfaces = type.getInterfaces();
 +
 +          if (typeInterfaces.length !== 0) {
-+              type._fields = type.getFields()
++              type._fields = type.getFields();
 +
 +              typeInterfaces.forEach(i => {
-+                  const iFields = typeMap[i.name].getFields()
++                  const iFields = typeMap[i.name].getFields();
 +                  Object.keys(iFields).forEach(keyName => {
-+                      type._fields[keyName] = iFields[keyName]
++                      type._fields[keyName] = iFields[keyName];
 +                  })
 +              })
 +          }
