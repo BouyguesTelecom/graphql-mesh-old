@@ -12,7 +12,7 @@ index 5e752ad..3b487f5 100644
          const currentNamedType = (0, graphql_1.getNamedType)(c.type);
          if (finalNamedType.toString() !== currentNamedType.toString()) {
 diff --git a/node_modules/@graphql-tools/stitch/cjs/typeCandidates.js b/node_modules/@graphql-tools/stitch/cjs/typeCandidates.js
-index c915942..d28ed66 100644
+index c915942..d6fa958 100644
 --- a/node_modules/@graphql-tools/stitch/cjs/typeCandidates.js
 +++ b/node_modules/@graphql-tools/stitch/cjs/typeCandidates.js
 @@ -119,6 +119,29 @@ function buildTypes({ typeCandidates, directives, stitchingInfo, rootTypeNames,
@@ -45,30 +45,17 @@ index c915942..d28ed66 100644
              typeMap[typeName] = (0, mergeCandidates_js_1.mergeCandidates)(typeName, typeCandidates[typeName], typeMergingOptions);
          }
          else {
-@@ -128,6 +151,58 @@ function buildTypes({ typeCandidates, directives, stitchingInfo, rootTypeNames,
+@@ -128,6 +151,66 @@ function buildTypes({ typeCandidates, directives, stitchingInfo, rootTypeNames,
              typeMap[typeName] = candidateSelector(typeCandidates[typeName]).type;
          }
      }
 +
 +    /**
-+     * When an object implements an interface, it needs to have every property
-+     * of this interface. Because interfaces have been possibly merged earlier
-+     * in this file, this statement is sometimes not true anymore.
++     * Really tidious edge case when an object implements more than 1 interface
 +     */
 +    Object.values(typeMap).forEach((type) => {
 +        if (type.constructor.name === "GraphQLObjectType") {
 +            const typeInterfaces = type.getInterfaces()
-+
-+            if (typeInterfaces.length !== 0) {
-+                type._fields = type.getFields()
-+
-+                typeInterfaces.forEach(i => {
-+                    const iFields = typeMap[i.name].getFields()
-+                    Object.keys(iFields).forEach(keyName => {
-+                        type._fields[keyName] = iFields[keyName]
-+                    })
-+                })
-+            }
 +
 +            if (typeInterfaces.length >= 2) {
 +                let uniqueFields = {}
@@ -100,6 +87,27 @@ index c915942..d28ed66 100644
 +            }
 +        }
 +    });
++    /**
++     * When an object implements an interface, it needs to have every property
++     * of this interface. Because interfaces have been possibly merged earlier
++     * in this file, this statement is sometimes not true anymore.
++     */
++    Object.values(typeMap).forEach((type) => {
++      if (type.constructor.name === "GraphQLObjectType") {
++          const typeInterfaces = type.getInterfaces()
++
++          if (typeInterfaces.length !== 0) {
++              type._fields = type.getFields()
++
++              typeInterfaces.forEach(i => {
++                  const iFields = typeMap[i.name].getFields()
++                  Object.keys(iFields).forEach(keyName => {
++                      type._fields[keyName] = iFields[keyName]
++                  })
++              })
++          }
++      }
++    })
 +
      return (0, utils_1.rewireTypes)(typeMap, directives);
  }
