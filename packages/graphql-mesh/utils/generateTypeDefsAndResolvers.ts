@@ -25,16 +25,12 @@ export const generateTypeDefsAndResolversFromSwagger = (
   catalog: Catalog,
   config: any
 ): ConfigExtension => {
-  if (!spec.components) {
+  if (!spec.components?.schemas) {
     console.warn('No components found in the swagger file')
     return { typeDefs: '', resolvers: {} }
   }
 
   const { schemas } = spec.components
-  if (!schemas) {
-    console.warn('No schemas found in the swagger file')
-    return { typeDefs: '', resolvers: {} }
-  }
 
   let typeDefs = ''
   const resolvers: Resolvers = {}
@@ -44,7 +40,7 @@ export const generateTypeDefsAndResolversFromSwagger = (
       .filter(isSpecialKey)
       .forEach(([key, value]) => {
         /**
-         * Prefix-schema processing:
+         * Schema prefixation processing:
          * Add a prefixSchema directive for each schema having the "x-graphql-prefix-schema-with" key
          */
         if (key === 'x-graphql-prefix-schema-with') {
@@ -68,8 +64,67 @@ export const generateTypeDefsAndResolversFromSwagger = (
         }
 
         /**
-         * xLinks processing:
+         * HATEOAS links processing:
          * Add additional properties for each schema having the "x-links" key
+         *
+         * Explanations:
+         * GraphQL Mesh can't understand HATEOAS links natively.
+         * To translate them to GraphQL Mesh, we have to create an additional type definition
+         * and an additional resolver for each HATEOAS link.
+         *
+         * Example:
+         * If we have one HATEOAS link defined like this...
+         * ```
+         *      "Vehicle": {
+         *        ...,
+         *        "properties": {
+         *          "_links": {
+         *            "$ref": "#/components/schemas/VehicleLinks"
+         *          }
+         *        }
+         *      },
+         *      "VehicleLinks": {
+         *        ...,
+         *        "properties": {
+         *          "linkToFollow": {
+         *            "$ref": "#/components/schemas/XLink"
+         *          }
+         *        },
+         *        "x-links": [
+         *          {
+         *            "rel": "linkToFollow",
+         *            "type": "application/json",
+         *            "hrefPattern": "/the/link/path"
+         *          }
+         *        ]
+         *      }
+         * ```
+         * ...we will have to create an additional type definition and and additional resolver like this:
+         * typeDef
+         * ```
+         *      extend type Vehicle {
+         *        linkToFollow: CorrespondingPath
+         *      }
+         * ```
+         * resolver
+         * ```
+         *      {
+         *        Vehicle: {
+         *          linkToFollow: {
+         *            selectionSet: ...,
+         *            resolve: ...
+         *          }
+         *        }
+         *      }
+         * ```
+         *
+         * Strategy:
+         * The main difficulty is that, while in HATEOAS a link is referenced by its path,
+         * in GraphQL Mesh a "link" represented by a type definition is referenced by the
+         * type returned by the corresponding operation (as seen above).
+         * Therefore, we need to have a catalog of all the path and corresponding type
+         * available in our spec. Then we can map each patch to the type returned by its
+         * operation.
          */
         if (key === 'x-links') {
           const trimedSchemaKey = trimLinks(schemaKey)
