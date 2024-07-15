@@ -23,6 +23,15 @@ export default class ConfigFromSwaggers {
     this.specs = this.swaggers.map(
       (swagger) => <Spec>JSON.parse(readFileSync(swagger, { encoding: 'utf-8' }))
     )
+    /**
+     * The following code builds a comprehensive catalog of all operations defined in a list of Swagger specifications.
+     * The resulting catalog is an object where:
+     * - Keys are operation paths (e.g. "foo/bar/endpoint").
+     * - Values are objects with details about each operation, including:
+     *   - operationIds: a list of operation IDs corresponding to this path.
+     *   - type: the type returned by the 200 response of this path.
+     *   - swaggers: a list of Swagger definitions where this path is present.
+     */
     this.catalog = this.specs.reduce((acc, spec, i) => {
       Object.keys(spec.paths).forEach((path) => {
         const query = spec.paths[path]?.get
@@ -47,7 +56,29 @@ export default class ConfigFromSwaggers {
     }, {} as Catalog)
   }
 
-  getInterfacesWithChildren() {
+  /**
+   * Extracts and returns all available schema types from the Swagger specifications.
+   *
+   * @returns {string[]} An array of schema type names.
+   *
+   * This function flattens the list of schemas from all Swagger specifications
+   * and extracts the keys (schema names) from the components' schemas.
+   */
+  getAvailableTypes(): string[] {
+    return this.specs.flatMap((spec) => Object.keys(spec.components?.schemas ?? {}))
+  }
+
+  /**
+   * Identifies and returns a map of interface along with their child types.
+   *
+   * @returns {Record<string, string[]>} An object where keys are interface names
+   * and values are arrays of child schema names.
+   *
+   * This function iterates through all Swagger specifications to find schemas that
+   * use discriminators. For each schema with a discriminator, it collects the mapping
+   * of the discriminator and associates child schemas to the parent schema.
+   */
+  getInterfacesWithChildren(): Record<string, string[]> {
     this.specs.forEach((s) => {
       const { schemas } = s.components || {}
       const entries = Object.entries(schemas || {}).filter(([_, value]) =>
@@ -77,26 +108,37 @@ export default class ConfigFromSwaggers {
     return this.interfacesWithChildren
   }
 
+  /**
+   * Creates and returns GraphQL type definitions and resolvers based on the Swagger specifications.
+   * The function processes each Swagger specification and extracts or generates GraphQL types and resolvers.
+   *
+   * @returns {ConfigExtension} An object containing the type definitions and resolvers.
+   *
+   * This function supports configurations that allow for schema renaming based on the Swagger version.
+   */
   createTypeDefsAndResolvers() {
     if (this.config.sources) {
       this.specs.forEach((spec, index) => {
-        // Suffix each schema name by the swagger version if there is a "rename" transform
+        // Apply naming transformations if specified in the configuration
         if (
           spec.components &&
           this.config.sources[index]?.transforms?.find(
             (transform) => transform.rename !== undefined
           )
         ) {
+          // Extract the major version from the Swagger specification
           const xVersion = spec.info.version.split('.')[0]
+          // Create a new object to store schemas with version suffixes
           const schemasWithSuffix = {}
+          // Suffix each schema name with the major version number
           Object.entries(spec.components.schemas).forEach(([key, schema]) => {
             schemasWithSuffix[`${key}_v${xVersion}`] = schema
           })
+          // Replace the original schemas with the suffixed schemas
           spec.components.schemas = schemasWithSuffix
         }
       })
     }
-    const availableTypes = this.getAvailableTypes(this.specs)
     const typeDefs = /* GraphQL */ `
       type LinkItem {
         rel: String
@@ -107,14 +149,21 @@ export default class ConfigFromSwaggers {
         action: String
       }
     `
+
+    const availableTypes = this.getAvailableTypes()
+    const interfacesWithChildren = this.getInterfacesWithChildren()
+    const catalog = this.catalog
+    const config = this.config
+
+    // Reduce over the specifications to generate and accumulate type definitions and resolvers
     return this.specs.reduce(
       (acc, spec) => {
         const { typeDefs, resolvers } = generateTypeDefsAndResolversFromSwagger(
           spec,
           availableTypes,
-          this.getInterfacesWithChildren(),
-          this.catalog,
-          this.config
+          interfacesWithChildren,
+          catalog,
+          config
         )
         acc.typeDefs += typeDefs
         acc.resolvers = mergeObjects(acc.resolvers, resolvers)
@@ -124,6 +173,15 @@ export default class ConfigFromSwaggers {
     )
   }
 
+  /**
+   * Generates and returns an array of OpenAPI sources configured for the project.
+   * Each source includes a name, handler configurations, and possible transformations.
+   *
+   * @returns {OpenApiSource[]} An array of configured OpenAPI sources.
+   *
+   * This function maps over the `this.swaggers` array and constructs an object for each source,
+   * incorporating relevant configurations such as endpoint and headers.
+   */
   getOpenApiSources() {
     return (
       this.swaggers.map((source) => ({
@@ -145,7 +203,14 @@ export default class ConfigFromSwaggers {
     )
   }
 
-  // Get sources that are not openapi
+  /**
+   * Filters and returns an array of sources that are not OpenAPI sources from the configuration.
+   *
+   * @returns {OtherSource[]} An array of sources that do not use OpenAPI handlers.
+   *
+   * This function checks the `this.config.sources` array and filters out any source
+   * that has an OpenAPI handler configuration.
+   */
   getOtherSources() {
     return (
       this.config.sources?.filter(
@@ -154,7 +219,14 @@ export default class ConfigFromSwaggers {
     )
   }
 
-  // Create Mesh config
+  /**
+   * Constructs and returns a complete Mesh configuration object based on the Swagger specifications and custom sources.
+   *
+   * @returns {MeshConfig} An object containing the default configuration, additional type definitions, resolvers, and sources.
+   *
+   * This function integrates type definitions and resolvers generated from the Swagger specifications
+   * and combines OpenAPI sources with other custom sources from the configuration.
+   */
   getMeshConfigFromSwaggers(): {
     defaultConfig: any
     additionalTypeDefs: string
@@ -169,8 +241,4 @@ export default class ConfigFromSwaggers {
       sources: [...this.getOpenApiSources(), ...this.getOtherSources()]
     }
   }
-
-  // Get all schema names from all swaggers
-  getAvailableTypes = (specs: Spec[]) =>
-    specs.flatMap((spec) => Object.keys(spec.components?.schemas ?? {}))
 }

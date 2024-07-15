@@ -28,7 +28,7 @@ const downSwaggerFromUrl = async (url: string | undefined, index: string): Promi
       importFn: (mod) => import(mod),
       logger
     })
-    let fileName = getFileName(url) || `${index}-${url.split('/').pop()}`
+    let fileName = `${index}-${getFileName(url)}`
     if (!fileName.endsWith('.json')) {
       fileName += '.json'
     }
