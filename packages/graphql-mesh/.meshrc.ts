@@ -1,5 +1,5 @@
 import { YamlConfig } from '@graphql-mesh/types'
-import ConfigFromSwaggers from './utils/ConfigFromSwaggers'
+import ConfigFromSwaggers from './utils/configFromSwaggers'
 import { splDirectiveTypeDef } from 'directive-spl'
 import { catchHTTPErrorDirectiveTypeDef } from './directives/catchHTTPError'
 import { headersDirectiveTypeDef } from './directives/headers'
