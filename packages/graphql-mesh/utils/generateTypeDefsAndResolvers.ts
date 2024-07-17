@@ -54,7 +54,7 @@ export const generateTypeDefsAndResolversFromSwagger = (
           // Add a prefixSchema directive to the type definition
           typeDefs += `extend ${schemaType} ${schemaKey} @prefixSchema(prefix: "${value}") { dummy: String }\n`
 
-          // If it's an interface, prefix each of its children too
+          // If it's an interface, add the dummy property to each of its children too
           if (schemaType === 'interface') {
             interfacesWithChildren[schemaKey].forEach((children) => {
               const parentVersion = schemaKey.split('_')[schemaKey.split('_').length - 1]

@@ -5,7 +5,8 @@
     "downloadswaggers": "NODE_TLS_REJECT_UNAUTHORIZED='0' sucrase-node ./scripts/download-sources.ts",
     "postinstall": "patch-package",
     "serve": "npm run build && sucrase-node serve.ts",
-    "start": "npm run downloadswaggers && mesh dev"
+    "start": "npm run downloadswaggers && mesh dev",
+    "test": "vitest"
   },
   "dependencies": {
     "@graphql-mesh/cache-localforage": "^0.96.2",
