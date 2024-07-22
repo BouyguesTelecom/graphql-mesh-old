@@ -1,4 +1,4 @@
-name: Run Unit Tests for directive-spl library
+name: Run Unit Tests for the directive-spl library
 
 on:
   push:

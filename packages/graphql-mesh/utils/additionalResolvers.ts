@@ -1,4 +1,4 @@
-import ConfigFromSwaggers from './ConfigFromSwaggers'
+import ConfigFromSwaggers from './configFromSwaggers'
 
 const configFromSwaggers = new ConfigFromSwaggers()
 const { additionalResolvers } = configFromSwaggers.getMeshConfigFromSwaggers()
