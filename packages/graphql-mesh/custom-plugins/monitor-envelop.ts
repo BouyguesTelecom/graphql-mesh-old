@@ -21,9 +21,9 @@ const formatter = (error: GraphQLError, mask: string): GraphQLError => {
 export default ({ options }): Plugin => {
 	// not allow by default
 	// do not enabled enabledIntrospection in production 
-	const enabledIntrospection =  process.env['IS_PROUCTION_ENV'] != 'true' && ( options.enabledIntrospection || process.env['ENABLED_INTROSPECTION'] || false )
+	const enabledIntrospection =  process.env['IS_PROUCTION_ENV'] != 'true' && ( options?.enabledIntrospection || process.env['ENABLED_INTROSPECTION'] || false )
 	// low info in log by default
-	const resultLogInfoLevel= options.resultLogInfoLevel ? options.resultLogInfoLevel : "low"
+	const resultLogInfoLevel= options?.resultLogInfoLevel ? options.resultLogInfoLevel : "low"
 
 	return {
 		onParse({ params, context }) {

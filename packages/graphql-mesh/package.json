@@ -22,6 +22,7 @@
     "@graphql-mesh/transform-type-merging": "^0.96.2",
     "@graphql-tools/schema": "^10.0.2",
     "@graphql-tools/utils": "^10.0.12",
+	"prom-client": "^15.1.3",
     "directive-spl": "file:./local-pkg/directive-spl-1.0.0.tgz",
 	"monitor-envelop": "file:./custom-plugins/monitor-envelop.ts",
 	"monitor-fetch": "file:./custom-plugins/monitor-fetch.ts",

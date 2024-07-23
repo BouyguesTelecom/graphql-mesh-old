@@ -13,13 +13,13 @@ import { GraphQLError } from 'graphql'
  * - remove a eventualy not allowed instropection data in result
  */
 export function useYagaMonitoring({ options }): Plugin {
-	const isMaskErrors = options.maskError?.enabled || process.env['MASK_ERRORS'] || false
+	const isMaskErrors = options?.maskError?.enabled || process.env['MASK_ERRORS'] || false
 	// filter in production anyway
-	const isFilterError = options.filterError?.enabled || process.env['FILTER_ERRORS'] == 'true' || process.env['IS_PROUCTION_ENV'] == 'true' || false
+	const isFilterError = options?.filterError?.enabled || process.env['FILTER_ERRORS'] == 'true' || process.env['IS_PROUCTION_ENV'] == 'true' || false
 
-	const errorMaskMessage = options.maskError?.message ? options.maskError.message : "something goes wrong"
-	const reponseLogInfoLevel = options.reponseLogInfoLevel ? options.reponseLogInfoLevel : "low"
-	const resultLogInfoLevel = options.resultLogInfoLevel ? options.resultLogInfoLevel : "low"
+	const errorMaskMessage = options?.maskError?.message ? options.maskError.message : "something goes wrong"
+	const reponseLogInfoLevel = options?.reponseLogInfoLevel ? options.reponseLogInfoLevel : "low"
+	const resultLogInfoLevel = options?.resultLogInfoLevel ? options.resultLogInfoLevel : "low"
 
 
 	return {

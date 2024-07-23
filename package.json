@@ -12,7 +12,7 @@
     "build:local:packages": "concurrently \"npm run pack -w directive-spl\" \"npm run pack -w inject-additional-transforms\"",
     "preinstall": "npm run build:local:packages",
     "start": "npm start -w graphql-mesh",
-	"startmesh": "npm run startmesh -w graphql-mesh"
+    "startmesh": "npm run startmesh -w graphql-mesh"
   },
   "devDependencies": {
     "concurrently": "^8.2.2",
@@ -21,5 +21,8 @@
   "engines": {
     "node": "18"
   },
-  "packageManager": "npm@9.5.1"
+  "packageManager": "npm@9.5.1",
+  "dependencies": {
+    "prom-client": "^15.1.3"
+  }
 }
