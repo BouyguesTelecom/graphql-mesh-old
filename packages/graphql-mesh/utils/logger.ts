@@ -22,7 +22,7 @@ export class Logger {
 	/**
 	 * Core logger with Human format or machine one line json string format
 	 */
-	private static log(level: string, typeEv: string, message: string, data: any = null, err = null) {
+	private static log(level: string, typeEv: string, message: string, ctx = null, data: any = null, err = null) {
 
 		const date = new Date();
 		const timestamp = date.getTime();
@@ -36,14 +36,19 @@ export class Logger {
 				date: date.toLocaleString(this.localDateCountry),
 				message: message
 			}
+			if (ctx) {
+
+				log['ctx'] = ctx
+			}
 			if (data) {
+
 				log['data'] = data
 			}
 			if (err) {
 				log['exeception'] = {}
-				for (const key in Object.keys(err)) {
+				console.log("Exception:", err)
+				for (const key in err) {
 					log['exeception'][key] = err[key]
-
 				}
 			}
 			// if define add extra env field
@@ -56,31 +61,29 @@ export class Logger {
 		}
 	}
 
-	public static error(typeEv: string, source: string, message: string, data: any = null, e = null) {
+	public static error(typeEv: string, source: string, message: string, ctx = null, data = null, e = null) {
 		if (Logger.level == 'ERROR' || Logger.level == 'WARN' || Logger.level == 'INFO' || Logger.level == 'DEBUG') {
-			Logger.log('ERROR', typeEv, source + ":" + message, data, e)
+			Logger.log('ERROR', typeEv, source + ":" + message, ctx, data, e)
 		}
 	}
-	public static warn(typeEv: string, source: string, message: string, data: any = null, e = null) {
+	public static warn(typeEv: string, source: string, message: string, ctx: any = null, data: any = null, e = null) {
 		if (Logger.level == 'WARN' || Logger.level == 'INFO' || Logger.level == 'DEBUG') {
-			Logger.log('INFO', typeEv, source + ":" + message, data, e)
+			Logger.log('INFO', typeEv, source + ":" + message, ctx, data, e)
 		}
 	}
 
-	public static info(typeEv: string, source: string, message: string, data: any = null, e = null) {
+	public static info(typeEv: string, source: string, message: string, ctx: any = null, data: any = null, e = null) {
 		if (Logger.level == 'INFO' || Logger.level == 'DEBUG') {
-			Logger.log('INFO', typeEv, source + ":" + message, data, e)
+			Logger.log('INFO', typeEv, source + ":" + message, ctx, data, e)
 		}
 	}
-	public static debug(typeEv: string, source: string, message: string, data: any = null, e = null) {
+	public static debug(typeEv: string, source: string, message: string, ctx: any = null, data: any = null, e = null) {
 		if (Logger.level == 'DEBUG') {
-			Logger.log('DEBUG', typeEv, source + ":" + message, data, e)
+			Logger.log('DEBUG', typeEv, source + ":" + message, ctx, data, e)
 		}
 	}
 	public static onParse(headers: any) {
 		try {
-
-
 
 			Logger.log('INFO', "ON-PARSE", "Request", headersToLog(headers, this.logTrackerHeaders, this.logHeaders, this.trackerOnly))
 		} catch (e) {
@@ -92,7 +95,6 @@ export class Logger {
 		try {
 
 			const toLog = {
-				headers: headersToLog(headers, this.logTrackerHeaders, this.logHeaders, this.trackerOnly),
 				result: {
 					hasErrors: (result['errors'] != undefined),
 					hasData: (result['data'] != undefined),
@@ -100,7 +102,9 @@ export class Logger {
 				},
 				duration: duration,
 			}
-			Logger.log('INFO', "endExecDone", "Request", toLog)
+			const ctx = { headers: headersToLog(headers, this.logTrackerHeaders, this.logHeaders, this.trackerOnly) }
+
+			Logger.log('INFO', "endExecDone", "Request", ctx, toLog)
 		} catch (e) {
 			Logger.error('LOGGER_ERROR', 'endExec logger', 'error during log generation', null, e)
 
@@ -112,15 +116,14 @@ export class Logger {
 			const headerMap = request['headers']
 
 			const toLog = {
-				headers: headersToLog(headerMap, this.logTrackerHeaders, this.logHeaders, this.trackerOnly),
-
 				hasErrors: (result['errors'] != undefined),
 				hasData: (result['data'] != undefined),
 				responseInfo: info(result, this.maxSkackLogSize, resultLogInfo)
 			}
 
+			const ctx = { headers: headersToLog(headerMap, this.logTrackerHeaders, this.logHeaders, this.trackerOnly) }
 
-			Logger.log('INFO', "onResultProcess", "Result", toLog)
+			Logger.log('INFO', "onResultProcess", "Result", ctx, toLog)
 		} catch (e) {
 			Logger.error('LOGGER_ERROR', 'onResponse logger', 'error during log generation', null, e)
 		}
@@ -128,13 +131,13 @@ export class Logger {
 
 	public static onRequestParseDone(headers: any, query: any, operation: string, variables: any, duration: number) {
 		const toLog = {
-			headers: headersToLog(headers, this.logTrackerHeaders, this.logHeaders, this.trackerOnly),
 			operation: operation,
 			query: query,
 			variables: variables,
 			parsingDuration: duration
 		}
-		Logger.log('INFO', "requestParseDone", "requestParse", toLog)
+		const ctx = { headers: headersToLog(headers, this.logTrackerHeaders, this.logHeaders, this.trackerOnly) }
+		Logger.log('INFO', "requestParseDone", "requestParse", ctx, toLog)
 	}
 
 	public static onResponse(request: any, response: any, logResponseLevellevel: string) {
@@ -152,7 +155,6 @@ export class Logger {
 
 			const toLog = {
 				request: {
-					headers: headersToLog(headers, this.logTrackerHeaders, this.logHeaders, this.trackerOnly),
 					url: request.url,
 					method: request.method
 				},
@@ -166,30 +168,68 @@ export class Logger {
 			if (logResponseLevellevel != 'low') {
 				toLog.response['bodyInfo'] = extractBody(response.bodyInit, this.bodyMaxLogSize)
 			}
-			Logger.log('INFO', "onResponse", "response", toLog)
+			const ctx = { headers: headersToLog(headers, this.logTrackerHeaders, this.logHeaders, this.trackerOnly) }
+
+			Logger.log('INFO', "onResponse", "response", ctx, toLog)
 		}
 		catch (e) {
-			Logger.error('LOGGER_ERROR', 'onResponse logger', 'error during log generation', null, e)
+			Logger.error('LOGGER_ERROR', 'onResponse logger', 'error during log generation', null, null, e)
 		}
 	}
 
+	public static introspection(event,headers,query) {
+		try {
+			
+			const ctx = { headers: headersToLog(headers, this.logTrackerHeaders, this.logHeaders, false) }
+			const toLog = {
+                query: query
+			}
+			Logger.warn('WARN', event,  "introspection query", ctx, toLog)
+		}
+		catch (e) {
+			Logger.error('LOGGER_ERROR', 'introspection logger', 'error during log generation', null, null, e)
+		}
+	}
+	
+	public static denyIntrospection(event,message,headers) {
+		try {
+			
+			const ctx = { headers: headersToLog(headers, this.logTrackerHeaders, this.logHeaders, false) }
+
+			Logger.warn('DENY_INTROSPECTION', event,  message, ctx)
+		}
+		catch (e) {
+			Logger.error('LOGGER_ERROR', 'denyIntrospection logger', 'error during log generation', null, null, e)
+		}
+	}
+
+	public static allowIntrospection(event,message,headers) {
+		try {
+			
+			const ctx = { headers: headersToLog(headers, this.logTrackerHeaders, this.logHeaders, false) }
+
+			Logger.warn('ALLOW_INTROSPECTION', event,  message, ctx)
+		}
+		catch (e) {
+			Logger.error('LOGGER_ERROR', 'denyIntrospection logger', 'error during log generation', null, null, e)
+		}
+	}	
 	public static onRequest(request: any) {
 		try {
 			const headers = request['headers']
+			const ctx = { headers: headersToLog(headers, this.logTrackerHeaders, this.logHeaders, false) }
 			const toLog = {
-				request: {
-					headers: headersToLog(headers, this.logTrackerHeaders, this.logHeaders, false),
-					url: request.url,
-					method: request.method,
-					body: request.body
 
-				}
+				url: request.url,
+				method: request.method,
+				//body: request.body
 			}
-			Logger.log('INFO', "onRequest", "request", toLog)
+
+			Logger.log('INFO', "onRequest", "request incomming", ctx, toLog)
 
 		}
 		catch (e) {
-			Logger.error('LOGGER_ERROR', 'onRequest logger', 'error during log generation', null, e)
+			Logger.error('LOGGER_ERROR', 'onRequest logger', 'error during log generation', null, null, e)
 		}
 	}
 
@@ -198,12 +238,13 @@ export class Logger {
 			const headers = request['headers']
 
 			const toLog = {
-				requestHeaders: headersToLog(headers, this.logTrackerHeaders, this.logHeaders, this.trackerOnly),
 				fetchInfo: fetchInfo,
 				fetch: fetchResponseInfo,
 				duration: duration
 			}
-			Logger.log('INFO', "onFetch", "fetch", toLog)
+			const ctx = { headers: headersToLog(headers, this.logTrackerHeaders, this.logHeaders, this.trackerOnly) }
+
+			Logger.log('INFO', "onFetch", "fetch", ctx, toLog)
 		} catch (e) {
 			Logger.error('LOGGER_ERROR', 'onFetch logger', 'error during log generation', null, e)
 		}
@@ -213,12 +254,13 @@ export class Logger {
 		try {
 			const regex = /  /gi;
 			const queryTolog = {
-				headers: headersToLog(headers, this.logTrackerHeaders, this.logHeaders, this.trackerOnly),
 				query: params['query'].replace(regex, ""),
 				operationName: params['operationName'],
 				variables: params['variables']
 			}
-			Logger.log('INFO', "graphqlQuery", "GraphQL Query", queryTolog)
+			const ctx = { headers: headersToLog(headers, this.logTrackerHeaders, this.logHeaders, this.trackerOnly) }
+
+			Logger.log('INFO', "graphqlQuery", "GraphQL Query", ctx, queryTolog)
 		} catch (e) {
 			Logger.error('LOGGER_ERROR', 'graphql query logger', 'error during log generation', null, e)
 		}

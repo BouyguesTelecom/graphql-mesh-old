@@ -22,6 +22,7 @@ export function useYagaMonitoring({ options }): Plugin {
 	const resultLogInfoLevel = options?.resultLogInfoLevel ? options.resultLogInfoLevel : "low"
 
 
+
 	return {
 		onRequest({ request/*, fetchAPI, endResponse */ }) {
 			Logger.onRequest(request)
@@ -29,6 +30,7 @@ export function useYagaMonitoring({ options }): Plugin {
 			// add resuestTimestamp in headers
 			const timestamp = new Date().getTime();
 			request.headers.append("requestTimestamp", String(timestamp))
+			
 		},
 		onRequestParse(args) {
 			const beforeTimestamp = new Date().getTime();
@@ -38,7 +40,7 @@ export function useYagaMonitoring({ options }): Plugin {
 					const timestamp = new Date().getTime();
 					Logger.onRequestParseDone(requestHeaders, nRequestParseDoneEventPayload.requestParserResult['query'], nRequestParseDoneEventPayload.requestParserResult['operationName'], nRequestParseDoneEventPayload.requestParserResult['variables'], timestamp - beforeTimestamp)
 					if (nRequestParseDoneEventPayload.requestParserResult['query'].includes('__schema')) {
-						Logger.info("IntrospectionQuery", "onRequestParseDone", "introspection detected", nRequestParseDoneEventPayload.requestParserResult['query'])
+						Logger.introspection("onRequestParseDone", requestHeaders,nRequestParseDoneEventPayload.requestParserResult['query'])
 					}
 				}
 			}
