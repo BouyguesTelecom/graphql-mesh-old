@@ -302,7 +302,7 @@ export const generateTypeDefsAndResolversFromSwagger = (
           // Delete the additional typeDefs section if no new fields have been added
           subTypeDefs = subTypeDefs.replace(`extend ${schemaType} ${trimedSchemaKey} {\n}\n`, '')
 
-          if (matchedLinkItems.swaggers) {
+          if (subTypeDefs !== "") {
             typeDefs += subTypeDefs
             resolvers[trimedSchemaKey] = subResolver
           }

@@ -60,12 +60,40 @@ export default class ConfigFromSwaggers {
    * Extracts and returns all available schema types from the Swagger specifications.
    *
    * @returns {string[]} An array of schema type names.
-   *
-   * This function flattens the list of schemas from all Swagger specifications
-   * and extracts the keys (schema names) from the components' schemas.
    */
   getAvailableTypes(): string[] {
-    return this.specs.flatMap((spec) => Object.keys(spec.components?.schemas ?? {}))
+    const availableTypes = []
+    this.specs.forEach((spec) => {
+      // Extract the major version from the Swagger specification
+      const xVersion = spec.info.version.split('.')[0]
+      // Check if the specification contains paths
+      if (spec.paths) {
+        // Iterate over each method in the paths of the specification
+        Object.values(spec.paths).forEach((methods) => {
+          Object.values(methods).forEach((method) => {
+            // Retrieve the response with the 200 status code (success)
+            const response200 = method['responses']?.['200']
+            // Check if the 200 response has content
+            if (response200?.content) {
+              // Iterate over each content type in the 200 response
+              Object.values(response200.content).forEach((content) => {
+                // Retrieve the schema reference
+                const ref = content['schema']?.$ref
+                // If the reference exists, extract the type of object from the referenced schema
+                if (ref) {
+                  const match = ref.match(/#\/components\/schemas\/(.+)/)
+                  // If a match is found, add the type to availableTypes (with its version)
+                  if (match) {
+                    availableTypes.push(`${match[1]}_v${xVersion}`)
+                  }
+                }
+              })
+            }
+          })
+        })
+      }
+    })
+    return availableTypes
   }
 
   /**
