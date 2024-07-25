@@ -46,14 +46,7 @@ const isDataEmpty = (obj: { data: Object | string[] }) => {
     if (typeof value !== 'object') {
       return false
     }
-    for (let key in value) {
-      if (value.hasOwnProperty(key)) {
-        if (!checkProperties(value[key])) {
-          return false
-        }
-      }
-    }
-    return true
+    return !Object.values(value).some((val) => !checkProperties(val))
   }
   return checkProperties(obj)
 }
