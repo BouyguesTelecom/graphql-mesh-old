@@ -18,7 +18,7 @@ export function useYagaMonitoring({ options }): Plugin {
 	const isFilterError = options?.filterError?.enabled || process.env['FILTER_ERRORS'] == 'true' || process.env['IS_PROUCTION_ENV'] == 'true' || false
 
 	const errorMaskMessage = options?.maskError?.message ? options.maskError.message : "something goes wrong"
-	const reponseLogInfoLevel = options?.reponseLogInfoLevel ? options.reponseLogInfoLevel : "low"
+	const responseLogInfoLevel = options?.responseLogInfoLevel ? options.responseLogInfoLevel : "low"
 	const resultLogInfoLevel = options?.resultLogInfoLevel ? options.resultLogInfoLevel : "low"
 
 
@@ -71,7 +71,7 @@ export function useYagaMonitoring({ options }): Plugin {
 
 		onResponse({ request, response }) {
 			if (request.method != 'OPTION') {
-				Logger.onResponse(request, response, reponseLogInfoLevel)
+				Logger.onResponse(request, response, responseLogInfoLevel)
 			}
 		}
 	}

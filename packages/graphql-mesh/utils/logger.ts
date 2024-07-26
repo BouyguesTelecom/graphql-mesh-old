@@ -16,6 +16,9 @@ export class Logger {
 	private static localDateCountry: string = process.env["LogLocalDateCountry"] || "fr-FR"
 	private static logHeaders = process.env["LogHeaders"] || "x-request-id,host,origin,user-agent,content-length,authorization"
 	private static logTrackerHeaders = process.env["LogTrackerHeaders"] || "x-request-id"
+	private static skipHealthCheck = process.env["skipHealthCheck"] ? process.env["skipHealthCheck"] == "true" : true
+	private static healthCheckHeaderName = process.env["healthCheckHeazder"] || "x-internal"
+	private static HealthCheckHeaderValue = process.env["healthCheckHeaderValue"] || "health-check"
 	constructor() {
 
 	}
@@ -30,10 +33,10 @@ export class Logger {
 		// if machine friendly json string is required
 		if (Logger.format == 'JSON_STRING') {
 			const log = {
+				date: date.toLocaleString(this.localDateCountry),
 				level: level,
 				typeEv: typeEv,
 				timestamp: timestamp,
-				date: date.toLocaleString(this.localDateCountry),
 				message: message
 			}
 			if (ctx) {
@@ -84,8 +87,9 @@ export class Logger {
 	}
 	public static onParse(headers: any) {
 		try {
-
-			Logger.log('INFO', "ON-PARSE", "Request", headersToLog(headers, this.logTrackerHeaders, this.logHeaders, this.trackerOnly))
+			if (this.isEventToLog(headers)) {
+				Logger.log('INFO', "ON-PARSE", "Request", headersToLog(headers, this.logTrackerHeaders, this.logHeaders, this.trackerOnly))
+			}
 		} catch (e) {
 			Logger.error('LOGGER_ERROR', 'endExec logger', 'error during log generation', null, e)
 
@@ -93,18 +97,19 @@ export class Logger {
 	}
 	public static endExec(headers: any, result: any, duration: number, resultLogInfoLevel) {
 		try {
+			if (this.isEventToLog(headers)) {
+				const toLog = {
+					result: {
+						hasErrors: (result['errors'] != undefined),
+						hasData: (result['data'] != undefined),
+						resultSummayInfo: InfoResult(result, this.maxSkackLogSize, resultLogInfoLevel)
+					},
+					duration: duration,
+				}
+				const ctx = { headers: headersToLog(headers, this.logTrackerHeaders, this.logHeaders, this.trackerOnly) }
 
-			const toLog = {
-				result: {
-					hasErrors: (result['errors'] != undefined),
-					hasData: (result['data'] != undefined),
-					resultSummayInfo: info(result, this.maxSkackLogSize, resultLogInfoLevel)
-				},
-				duration: duration,
+				Logger.log('INFO', "endExecDone", "Request", ctx, toLog)
 			}
-			const ctx = { headers: headersToLog(headers, this.logTrackerHeaders, this.logHeaders, this.trackerOnly) }
-
-			Logger.log('INFO', "endExecDone", "Request", ctx, toLog)
 		} catch (e) {
 			Logger.error('LOGGER_ERROR', 'endExec logger', 'error during log generation', null, e)
 
@@ -114,119 +119,129 @@ export class Logger {
 	public static onResultProcess(request: any, result: any, resultLogInfo) {
 		try {
 			const headerMap = request['headers']
+			if (this.isEventToLog(headerMap)) {
 
-			const toLog = {
-				hasErrors: (result['errors'] != undefined),
-				hasData: (result['data'] != undefined),
-				responseInfo: info(result, this.maxSkackLogSize, resultLogInfo)
+
+				const toLog = {
+					hasErrors: result['errors'] ? true : false,
+					hasData: result['data'] ? true : false,
+					responseInfo: InfoResult(result, this.maxSkackLogSize, resultLogInfo)
+				}
+
+				const ctx = { headers: headersToLog(headerMap, this.logTrackerHeaders, this.logHeaders, this.trackerOnly) }
+
+				Logger.log('INFO', "onResultProcess", "Result", ctx, toLog)
 			}
-
-			const ctx = { headers: headersToLog(headerMap, this.logTrackerHeaders, this.logHeaders, this.trackerOnly) }
-
-			Logger.log('INFO', "onResultProcess", "Result", ctx, toLog)
 		} catch (e) {
 			Logger.error('LOGGER_ERROR', 'onResponse logger', 'error during log generation', null, e)
 		}
 	}
 
 	public static onRequestParseDone(headers: any, query: any, operation: string, variables: any, duration: number) {
-		const toLog = {
-			operation: operation,
-			query: query,
-			variables: variables,
-			parsingDuration: duration
+		if (this.isEventToLog(headers)) {
+			const toLog = {
+				operation: operation,
+				query: query,
+				variables: variables,
+				parsingDuration: duration
+			}
+			const ctx = { headers: headersToLog(headers, this.logTrackerHeaders, this.logHeaders, this.trackerOnly) }
+			Logger.log('INFO', "requestParseDone", "requestParse", ctx, toLog)
 		}
-		const ctx = { headers: headersToLog(headers, this.logTrackerHeaders, this.logHeaders, this.trackerOnly) }
-		Logger.log('INFO', "requestParseDone", "requestParse", ctx, toLog)
 	}
 
 	public static onResponse(request: any, response: any, logResponseLevellevel: string) {
 		try {
 			const headers = request['headers']
+			if (this.isEventToLog(headers)) {
+				const headers = request['headers']
 
-			// calculate duration from request timestamp
-			const requestTimestampString: string = headers.get('requesttimestamp')
-			let requestTimestamp;
-			if (requestTimestampString) {
-				requestTimestamp = parseInt(requestTimestampString)
+				// calculate duration from request timestamp
+				const requestTimestampString: string = headers.get('requesttimestamp')
+				let requestTimestamp;
+				if (requestTimestampString) {
+					requestTimestamp = parseInt(requestTimestampString)
+				}
+
+				const responseTimestamp = new Date().getTime();
+
+				const toLog = {
+					request: {
+						url: request.url,
+						method: request.method
+					},
+					response: {
+						status: response.status,
+						contentLength: response.contentLength,
+					},
+
+					duration: responseTimestamp - requestTimestamp
+				}
+				if (logResponseLevellevel != 'low') {
+					toLog.response['bodyExtract'] = extractBody(response.bodyInit, this.bodyMaxLogSize)
+				}
+				const ctx = { headers: headersToLog(headers, this.logTrackerHeaders, this.logHeaders, this.trackerOnly) }
+
+				Logger.log('INFO', "onResponse", "response", ctx, toLog)
 			}
-
-			const responseTimestamp = new Date().getTime();
-
-			const toLog = {
-				request: {
-					url: request.url,
-					method: request.method
-				},
-				response: {
-					status: response.status,
-					contentLength: response.contentLength,
-				},
-
-				duration: responseTimestamp - requestTimestamp
-			}
-			if (logResponseLevellevel != 'low') {
-				toLog.response['bodyInfo'] = extractBody(response.bodyInit, this.bodyMaxLogSize)
-			}
-			const ctx = { headers: headersToLog(headers, this.logTrackerHeaders, this.logHeaders, this.trackerOnly) }
-
-			Logger.log('INFO', "onResponse", "response", ctx, toLog)
 		}
 		catch (e) {
 			Logger.error('LOGGER_ERROR', 'onResponse logger', 'error during log generation', null, null, e)
 		}
 	}
 
-	public static introspection(event,headers,query) {
+	public static introspection(event, headers, query) {
 		try {
-			
+
 			const ctx = { headers: headersToLog(headers, this.logTrackerHeaders, this.logHeaders, false) }
 			const toLog = {
-                query: query
+				query: query
 			}
-			Logger.warn('WARN', event,  "introspection query", ctx, toLog)
+			Logger.warn('WARN', event, "introspection query", ctx, toLog)
 		}
 		catch (e) {
 			Logger.error('LOGGER_ERROR', 'introspection logger', 'error during log generation', null, null, e)
 		}
 	}
-	
-	public static denyIntrospection(event,message,headers) {
+
+	public static denyIntrospection(event, message, headers) {
 		try {
-			
+
 			const ctx = { headers: headersToLog(headers, this.logTrackerHeaders, this.logHeaders, false) }
 
-			Logger.warn('DENY_INTROSPECTION', event,  message, ctx)
+			Logger.warn('DENY_INTROSPECTION', event, message, ctx)
 		}
 		catch (e) {
 			Logger.error('LOGGER_ERROR', 'denyIntrospection logger', 'error during log generation', null, null, e)
 		}
 	}
 
-	public static allowIntrospection(event,message,headers) {
+	public static allowIntrospection(event, message, headers) {
 		try {
-			
+
 			const ctx = { headers: headersToLog(headers, this.logTrackerHeaders, this.logHeaders, false) }
 
-			Logger.warn('ALLOW_INTROSPECTION', event,  message, ctx)
+			Logger.warn('ALLOW_INTROSPECTION', event, message, ctx)
 		}
 		catch (e) {
 			Logger.error('LOGGER_ERROR', 'denyIntrospection logger', 'error during log generation', null, null, e)
 		}
-	}	
+	}
 	public static onRequest(request: any) {
 		try {
 			const headers = request['headers']
-			const ctx = { headers: headersToLog(headers, this.logTrackerHeaders, this.logHeaders, false) }
-			const toLog = {
+			if (this.isEventToLog(headers)) {
 
-				url: request.url,
-				method: request.method,
-				//body: request.body
+				const ctx = { headers: headersToLog(headers, this.logTrackerHeaders, this.logHeaders, false) }
+				const toLog = {
+
+					url: request.url,
+					method: request.method,
+					//body: request.body
+				}
+
+				Logger.log('INFO', "onRequest", "request incomming", ctx, toLog)
 			}
-
-			Logger.log('INFO', "onRequest", "request incomming", ctx, toLog)
-
 		}
 		catch (e) {
 			Logger.error('LOGGER_ERROR', 'onRequest logger', 'error during log generation', null, null, e)
@@ -252,18 +267,28 @@ export class Logger {
 
 	public static graphqlQuery(headers: any, params: any) {
 		try {
-			const regex = /  /gi;
-			const queryTolog = {
-				query: params['query'].replace(regex, ""),
-				operationName: params['operationName'],
-				variables: params['variables']
-			}
-			const ctx = { headers: headersToLog(headers, this.logTrackerHeaders, this.logHeaders, this.trackerOnly) }
+			if (this.isEventToLog(headers)) {
+				const regex = /  /gi;
+				const queryTolog = {
+					query: params['query'].replace(regex, ""),
+					operationName: params['operationName'],
+					variables: params['variables']
+				}
+				const ctx = { headers: headersToLog(headers, this.logTrackerHeaders, this.logHeaders, this.trackerOnly) }
 
-			Logger.log('INFO', "graphqlQuery", "GraphQL Query", ctx, queryTolog)
+				Logger.log('INFO', "graphqlQuery", "GraphQL Query", ctx, queryTolog)
+			}
 		} catch (e) {
 			Logger.error('LOGGER_ERROR', 'graphql query logger', 'error during log generation', null, e)
 		}
+	}
+	private static isEventToLog(headers): boolean {
+		if (this.skipHealthCheck && headers) {
+			if (headers.get(this.healthCheckHeaderName) == this.HealthCheckHeaderValue) {
+				return false
+			}
+		}
+		return true
 	}
 }
 
@@ -274,7 +299,7 @@ function mask(stringToMask: string) {
 	return null;
 }
 
-function info(result: any, maxStackLogSize: number, resultLogInfoLevel: string) {
+function InfoResult(result: any, maxStackLogSize: number, resultLogInfoLevel: string) {
 	let responseInfo = {}
 	let keys = null
 	let nbKeys = 0
@@ -283,32 +308,34 @@ function info(result: any, maxStackLogSize: number, resultLogInfoLevel: string) 
 		responseInfo['errors'] = []
 		responseInfo['nbErrors'] = result['errors'].length
 
-		for (const errorKey in result['errors']) {
-			const error = result['errors'][errorKey]
-			let logError = {}
-			if (error['message']) {
-				logError['message'] = error['message']
-			}
-			if (error['path']) {
-				logError['path'] = error['path']
-			}
-			// no stack trace and extension in low trace level
-			if (resultLogInfoLevel != 'low') {
-				if (error['stack']) {
-					logError['stack'] = error['stack'].substring(0, maxStackLogSize)
+		if (resultLogInfoLevel != 'low') {
+			for (const errorKey in result['errors']) {
+				const error = result['errors'][errorKey]
+				let logError = {}
+				if (error['message']) {
+					logError['message'] = error['message']
 				}
-				if (error['extensions']) {
-					logError['extensions'] = error['extensions']
+				if (resultLogInfoLevel == 'higth') {
+					if (error['path']) {
+						logError['path'] = error['path']
+					}
+					// no stack trace and extension in low trace level
+					if (error['stack']) {
+						logError['stack'] = error['stack'].substring(0, maxStackLogSize)
+					}
+					if (error['extensions']) {
+						logError['extensions'] = error['extensions']
+					}
 				}
+				responseInfo['errors'].push(logError)
 			}
-			responseInfo['errors'].push(logError)
 		}
-
 	} else {
 		responseInfo['nbErrors'] = 0
 	}
 	if (result['data']) {
 		if (resultLogInfoLevel != 'low') {
+			let keys = null
 			for (const key in result['data']) {
 				if (result['data'].hasOwnProperty(key)) {
 					if (keys == null) {
@@ -321,17 +348,15 @@ function info(result: any, maxStackLogSize: number, resultLogInfoLevel: string) 
 					nbKeys = nbKeys + 1
 				}
 			}
-			responseInfo['nbData'] = nbKeys
 			responseInfo['dataFields'] = keys
-		} else {
-			responseInfo['nbData'] = 0
 		}
+		responseInfo['nbDataField'] = result['data'].keys().length
 	}
 	return responseInfo
 }
 function extractBody(body: String, bodyMaxLogSize: number) {
 	if (body != null) {
-		return body.substring(0, bodyMaxLogSize)
+		return body.substring(0, bodyMaxLogSize) + " ... "
 	} else {
 		return ""
 	}
@@ -412,6 +437,7 @@ function addEnvFieldLog(logEnvInfoField: string, log: any) {
 		}
 	}
 }
+
 
 
 
