@@ -61,7 +61,7 @@ export default class ConfigFromSwaggers {
    *
    * @returns {string[]} An array of schema type names.
    */
-  getAvailableTypes(): string[] {
+  getAvailableTypes(areSchemasSuffixed: boolean): string[] {
     const availableTypes = []
     this.specs.forEach((spec) => {
       // Extract the major version from the Swagger specification
@@ -84,7 +84,11 @@ export default class ConfigFromSwaggers {
                   const match = ref.match(/#\/components\/schemas\/(.+)/)
                   // If a match is found, add the type to availableTypes (with its version)
                   if (match) {
-                    availableTypes.push(`${match[1]}_v${xVersion}`)
+                    if (areSchemasSuffixed) {
+                      availableTypes.push(`${match[1]}_v${xVersion}`)
+                    } else {
+                      availableTypes.push(`${match[1]}`)
+                    }
                   }
                 }
               })
@@ -145,6 +149,7 @@ export default class ConfigFromSwaggers {
    * This function supports configurations that allow for schema renaming based on the Swagger version.
    */
   createTypeDefsAndResolvers() {
+    let areSchemasSuffixed = false
     if (this.config.sources) {
       this.specs.forEach((spec, index) => {
         // Apply naming transformations if specified in the configuration
@@ -164,6 +169,7 @@ export default class ConfigFromSwaggers {
           })
           // Replace the original schemas with the suffixed schemas
           spec.components.schemas = schemasWithSuffix
+          areSchemasSuffixed = true
         }
       })
     }
@@ -178,7 +184,7 @@ export default class ConfigFromSwaggers {
       }
     `
 
-    const availableTypes = this.getAvailableTypes()
+    const availableTypes = this.getAvailableTypes(areSchemasSuffixed)
     const interfacesWithChildren = this.getInterfacesWithChildren()
     const catalog = this.catalog
     const config = this.config

@@ -225,8 +225,10 @@ describe('ConfigFromSwaggers tests', () => {
 
   // Test function to get available types
   it('should return all the available types', () => {
-    const expectedTypes = ['Person', 'Vehicles', 'Vehicle', 'Car', 'Bike']
-    expect(instance.getAvailableTypes()).toEqual(expectedTypes)
+    const expectedTypes = ['Person', 'Vehicles']
+    const expectedVersionedTypes = ['Person_v0', 'Vehicles_v0']
+    expect(instance.getAvailableTypes(false)).toEqual(expectedTypes)
+    expect(instance.getAvailableTypes(true)).toEqual(expectedVersionedTypes)
   })
 
   // Test function to get interfaces with their children
