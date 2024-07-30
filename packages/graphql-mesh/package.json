@@ -32,7 +32,8 @@
     "graphql": "^16.8.1",
     "inject-additional-transforms": "file:./local-pkg/inject-additional-transforms-1.0.0.tgz",
     "patch-package": "^8.0.0",
-    "sucrase": "^3.35.0"
+    "sucrase": "^3.35.0",
+	"uuid": "^10.0.0"
   },
   "devDependencies": {
     "@graphql-mesh/types": "^0.96.3",
