@@ -19,10 +19,12 @@ export default ({ options }) => {
 			const start = Date.now();
 			let rawSource = context[info.sourceName]
 			let description = info.parentType._fields[info.path.key].description
-			
+
 			return (fetch: any) => {
 				const duration = Date.now() - start;
 				let fetchInfo = {}
+				let httpStatus=null
+				let url=null
 				if (options.fullFetchInfo) {
 					fetchInfo = {
 						fieldName: info.fieldName,
@@ -42,20 +44,20 @@ export default ({ options }) => {
 						endpoint: rawSource.rawSource.handler.config.endpoint,
 					}
 				}
-				const fetchResponseInfo = {}
+				//const fetchResponseInfo = {}
 				if (fetch.response) {
 
-					fetchResponseInfo['status'] = fetch.response.status
-					fetchResponseInfo['url'] = fetch.response.url
+					httpStatus=fetch.response.status
+					url=fetch.response.url
 					const options = fetch.response.options
 					if (options) {
-						fetchResponseInfo['options'] = {
+						fetchInfo['options'] = {
 							requestId: options.headers['x-request-id'],
 							server: options.headers['server']
 						}
 					}
 				}
-				Logger.onFetch(context.request, fetchInfo, fetchResponseInfo, duration)
+				Logger.onFetch(context.request, url, httpStatus,duration,fetchInfo)
 			};
 		},
 

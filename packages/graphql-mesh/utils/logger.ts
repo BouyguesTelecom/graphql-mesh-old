@@ -2,7 +2,7 @@
  * Logger : Class static
  *
  */
-
+import { v4 as uuidv4 } from 'uuid';
 
 
 export class Logger {
@@ -14,18 +14,19 @@ export class Logger {
 	private static trackerOnly: boolean = process.env["LogTrackerHeadersOnly"] ? process.env["LogTrackerHeadersOnly"] == 'true' : false
 	private static envLog: string = process.env["LogEnvFieldToAdd"] // use to add env extra field in json log ex "app=graphql,env.name=production,env.site=Paris"
 	private static localDateCountry: string = process.env["LogLocalDateCountry"] || "fr-FR"
-	private static logHeaders = process.env["LogHeaders"] || "x-request-id,host,origin,user-agent,content-length,authorization"
-	private static logTrackerHeaders = process.env["LogTrackerHeaders"] || "x-request-id"
+	private static logHeaders = defineLogHeaders(process.env["LogHeaders"] || "headers.host=host,headers.origin,headers.user-agent=user-agent,headers.content-length=content-length,headers.authorization=authorization")
+	private static logContextHeaders = defineLogHeaders(process.env["LogHeadersContext"] || "ctx.requestId=x-request-id")
 	private static skipHealthCheck = process.env["skipHealthCheck"] ? process.env["skipHealthCheck"] == "true" : true
 	private static healthCheckHeaderName = process.env["healthCheckHeazder"] || "x-internal"
 	private static HealthCheckHeaderValue = process.env["healthCheckHeaderValue"] || "health-check"
+	private static MaxErrorStackSize = process.env["MaxErrorStackSize"] ? parseInt(process.env["MaxErrorStackSize"]) : 200
 	constructor() {
 
 	}
 	/**
 	 * Core logger with Human format or machine one line json string format
 	 */
-	private static log(level: string, typeEv: string, message: string, ctx = null, data: any = null, err = null) {
+	private static log(level: string, typeEv: string, message: string, headers = null, onlyContextHeader: boolean, info: any = null, err = null) {
 
 		const date = new Date();
 		const timestamp = date.getTime();
@@ -33,72 +34,89 @@ export class Logger {
 		// if machine friendly json string is required
 		if (Logger.format == 'JSON_STRING') {
 			const log = {
-				date: date.toLocaleString(this.localDateCountry),
-				level: level,
-				typeEv: typeEv,
-				timestamp: timestamp,
-				message: message
+				events: [{
+					idEv: uuidv4(),
+					date: date.toLocaleString(this.localDateCountry),
+					level: level,
+					typeEv: typeEv,
+					timestamp: timestamp,
+					message: message
+				}]
 			}
-			if (ctx) {
-
-				log['ctx'] = ctx
-			}
-			if (data) {
-
-				log['data'] = data
-			}
-			if (err) {
-				log['exeception'] = {}
-				console.log("Exception:", err)
-				for (const key in err) {
-					log['exeception'][key] = err[key]
+			try {
+				// add http headers
+				if (headers) {
+					this.addHeadersToContextLog(log, headers)
+					if (!onlyContextHeader) {
+						this.addHeadersToLog(log.events[0], headers)
+					}
 				}
-			}
-			// if define add extra env field
-			if (this.envLog) {
-				addEnvFieldLog(this.envLog, log)
+				// add extra information to log event
+				if (info) {
+					for (const key in info) {
+						log.events[0][key] = info[key]
+					}
+				}
+				// if exception error add message and an extract of stack trace
+				if (err) {
+					log.events[0]['exeception'] = {}
+					//console.log("Exception:", err)
+
+					log.events[0]['exeception'] = {
+						message: err.message,
+						stack: err.stack?.substring(0, this.MaxErrorStackSize) + " ..."
+					}
+
+				}
+				// if define add extra env field
+				if (this.envLog) {
+					addEnvFieldLog(this.envLog, log)
+				}
+
+			} catch (e) {
+				log['error'] = "error whileg getting log event contextual info :"+e.message
 			}
 			console.log(JSON.stringify(log))
 		} else {
-			console.log(date.toLocaleString(this.localDateCountry), level, typeEv, message, data, err)
+			console.log(date.toLocaleString(this.localDateCountry), level, typeEv, message, info, err)
 		}
 	}
 
-	public static error(typeEv: string, source: string, message: string, ctx = null, data = null, e = null) {
+	public static error(typeEv: string, source: string, message: string, headers = null, info = null, e = null) {
 		if (Logger.level == 'ERROR' || Logger.level == 'WARN' || Logger.level == 'INFO' || Logger.level == 'DEBUG') {
-			Logger.log('ERROR', typeEv, source + ":" + message, ctx, data, e)
+			Logger.log('ERROR', typeEv, source + ":" + message, headers, false, info, e)
 		}
 	}
-	public static warn(typeEv: string, source: string, message: string, ctx: any = null, data: any = null, e = null) {
+	public static warn(typeEv: string, source: string, message: string, headers: any = null, info: any = null, e = null) {
 		if (Logger.level == 'WARN' || Logger.level == 'INFO' || Logger.level == 'DEBUG') {
-			Logger.log('INFO', typeEv, source + ":" + message, ctx, data, e)
+			Logger.log('INFO', typeEv, source + ":" + message, headers, false, info, e)
 		}
 	}
 
-	public static info(typeEv: string, source: string, message: string, ctx: any = null, data: any = null, e = null) {
+	public static info(typeEv: string, source: string, message: string, headers: any = null, info: any = null, e = null) {
 		if (Logger.level == 'INFO' || Logger.level == 'DEBUG') {
-			Logger.log('INFO', typeEv, source + ":" + message, ctx, data, e)
+			Logger.log('INFO', typeEv, source + ":" + message, headers, true, info, e)
 		}
 	}
-	public static debug(typeEv: string, source: string, message: string, ctx: any = null, data: any = null, e = null) {
+	public static debug(typeEv: string, source: string, message: string, headers: any = null, info: any = null, e = null) {
 		if (Logger.level == 'DEBUG') {
-			Logger.log('DEBUG', typeEv, source + ":" + message, ctx, data, e)
+			Logger.log('DEBUG', typeEv, source + ":" + message, headers, true, info, e)
 		}
 	}
 	public static onParse(headers: any) {
 		try {
 			if (this.isEventToLog(headers)) {
-				Logger.log('INFO', "ON-PARSE", "Request", headersToLog(headers, this.logTrackerHeaders, this.logHeaders, this.trackerOnly))
+				Logger.log('INFO', "ON-PARSE", "Request", headers, true)
 			}
 		} catch (e) {
-			Logger.error('LOGGER_ERROR', 'endExec logger', 'error during log generation', null, e)
+			Logger.error('LOGGER_ERROR', 'onParse logger', 'error during log generation', null, e)
 
 		}
 	}
 	public static endExec(headers: any, result: any, duration: number, resultLogInfoLevel) {
 		try {
 			if (this.isEventToLog(headers)) {
-				const toLog = {
+				const info = {
 					result: {
 						hasErrors: (result['errors'] != undefined),
 						hasData: (result['data'] != undefined),
@@ -106,66 +124,62 @@ export class Logger {
 					},
 					duration: duration,
 				}
-				const ctx = { headers: headersToLog(headers, this.logTrackerHeaders, this.logHeaders, this.trackerOnly) }
-
-				Logger.log('INFO', "endExecDone", "Request", ctx, toLog)
+				Logger.log('INFO', "endExecDone", "Request", headers, true, info)
 			}
 		} catch (e) {
-			Logger.error('LOGGER_ERROR', 'endExec logger', 'error during log generation', null, e)
+			Logger.error('LOGGER_ERROR', 'endExec logger', 'error during log generation', headers,null, e)
 
 		}
 	}
 
 	public static onResultProcess(request: any, result: any, resultLogInfo) {
+    const headers = request['headers']
 		try {
-			const headerMap = request['headers']
-			if (this.isEventToLog(headerMap)) {
+
+			if (this.isEventToLog(headers)) {
 
 
-				const toLog = {
+				const info = {
 					hasErrors: result['errors'] ? true : false,
 					hasData: result['data'] ? true : false,
 					responseInfo: InfoResult(result, this.maxSkackLogSize, resultLogInfo)
 				}
 
-				const ctx = { headers: headersToLog(headerMap, this.logTrackerHeaders, this.logHeaders, this.trackerOnly) }
-
-				Logger.log('INFO', "onResultProcess", "Result", ctx, toLog)
+				Logger.log('INFO', "onResultProcess", "Result", headers, true, info)
 			}
 		} catch (e) {
-			Logger.error('LOGGER_ERROR', 'onResponse logger', 'error during log generation', null, e)
+			Logger.error('LOGGER_ERROR', 'onResponse logger', 'error during log generation', headers,null, e)
 		}
 	}
 
 	public static onRequestParseDone(headers: any, query: any, operation: string, variables: any, duration: number) {
 		if (this.isEventToLog(headers)) {
-			const toLog = {
+			const info = {
 				operation: operation,
 				query: query,
 				variables: variables,
 				parsingDuration: duration
 			}
-			const ctx = { headers: headersToLog(headers, this.logTrackerHeaders, this.logHeaders, this.trackerOnly) }
-			Logger.log('INFO', "requestParseDone", "requestParse", ctx, toLog)
+			Logger.log('INFO', "requestParseDone", "requestParse", headers, true, info)
 		}
 	}
 
 	public static onResponse(request: any, response: any, logResponseLevellevel: string) {
-		try {
-			const headers = request['headers']
+		const headers = request['headers']
+    try {
+
 			if (this.isEventToLog(headers)) {
-				const headers = request['headers']
 
 				// calculate duration from request timestamp
 				const requestTimestampString: string = headers.get('requesttimestamp')
-				let requestTimestamp;
+				let requestTimestamp: number;
 				if (requestTimestampString) {
 					requestTimestamp = parseInt(requestTimestampString)
 				}
 
 				const responseTimestamp = new Date().getTime();
 
-				const toLog = {
+				const info = {
 					request: {
 						url: request.url,
 						method: request.method
@@ -174,92 +188,86 @@ export class Logger {
 						status: response.status,
 						contentLength: response.contentLength,
 					},
-
+					httpStatus: response.status,
 					duration: responseTimestamp - requestTimestamp
 				}
 				if (logResponseLevellevel != 'low') {
-					toLog.response['bodyExtract'] = extractBody(response.bodyInit, this.bodyMaxLogSize)
+					info.response['bodyExtract'] = extractBody(response.bodyInit, this.bodyMaxLogSize)
 				}
-				const ctx = { headers: headersToLog(headers, this.logTrackerHeaders, this.logHeaders, this.trackerOnly) }
 
-				Logger.log('INFO', "onResponse", "response", ctx, toLog)
+				Logger.log('INFO', "onResponse", "response", headers, true, info)
 			}
 		}
 		catch (e) {
-			Logger.error('LOGGER_ERROR', 'onResponse logger', 'error during log generation', null, null, e)
+			Logger.error('LOGGER_ERROR', 'onResponse logger', 'error during log generation', headers, null, e)
 		}
 	}
 
-	public static introspection(event, headers, query) {
+	public static introspection(headers, info, query) {
 		try {
 
-			const ctx = { headers: headersToLog(headers, this.logTrackerHeaders, this.logHeaders, false) }
-			const toLog = {
+			const info = {
 				query: query
 			}
-			Logger.warn('WARN', event, "introspection query", ctx, toLog)
+			Logger.warn('WARN_INTROSPECTION', "introspection", "introspection query", headers, info)
 		}
 		catch (e) {
 			Logger.error('LOGGER_ERROR', 'introspection logger', 'error during log generation', null, null, e)
 		}
 	}
 
-	public static denyIntrospection(event, message, headers) {
+	public static denyIntrospection(headers, info, message,) {
 		try {
 
-			const ctx = { headers: headersToLog(headers, this.logTrackerHeaders, this.logHeaders, false) }
 
-			Logger.warn('DENY_INTROSPECTION', event, message, ctx)
+			Logger.warn('DENY_INTROSPECTION', info, message, headers)
 		}
 		catch (e) {
-			Logger.error('LOGGER_ERROR', 'denyIntrospection logger', 'error during log generation', null, null, e)
+			Logger.error('LOGGER_ERROR', 'denyIntrospection logger', 'error during log generation', headers, null, e)
 		}
 	}
 
-	public static allowIntrospection(event, message, headers) {
+	public static allowIntrospection(headers, info, message,) {
 		try {
 
-			const ctx = { headers: headersToLog(headers, this.logTrackerHeaders, this.logHeaders, false) }
 
-			Logger.warn('ALLOW_INTROSPECTION', event, message, ctx)
+			Logger.warn('ALLOW_INTROSPECTION', info, message, headers)
 		}
 		catch (e) {
-			Logger.error('LOGGER_ERROR', 'denyIntrospection logger', 'error during log generation', null, null, e)
+			Logger.error('LOGGER_ERROR', 'denyIntrospection logger', 'error during log generation', headers, null, e)
 		}
 	}
 	public static onRequest(request: any) {
+    const headers = request['headers']
 		try {
 			const headers = request['headers']
 			if (this.isEventToLog(headers)) {
 
-				const ctx = { headers: headersToLog(headers, this.logTrackerHeaders, this.logHeaders, false) }
-				const toLog = {
+				const info = {
 
 					url: request.url,
 					method: request.method,
 					//body: request.body
 				}
 
-				Logger.log('INFO', "onRequest", "request incomming", ctx, toLog)
+				Logger.log('INFO', "onRequest", "request incomming", headers, false, info)
 			}
 		}
 		catch (e) {
-			Logger.error('LOGGER_ERROR', 'onRequest logger', 'error during log generation', null, null, e)
+			Logger.error('LOGGER_ERROR', 'onRequest logger', 'error during log generation', headers, null, e)
 		}
 	}
 
-	public static onFetch(request: any, fetchInfo: any, fetchResponseInfo: any, duration: number) {
+	public static onFetch(request: any,  url: string, httpStatus: string, duration: number,fetchInfo: any) {
 		try {
 			const headers = request['headers']
-
-			const toLog = {
-				fetchInfo: fetchInfo,
-				fetch: fetchResponseInfo,
-				duration: duration
+			const info = {
+				fetch: fetch,
+				duration: duration,
+				httpStatus: httpStatus,
+				url: url
 			}
-			const ctx = { headers: headersToLog(headers, this.logTrackerHeaders, this.logHeaders, this.trackerOnly) }
-
-			Logger.log('INFO', "onFetch", "fetch", ctx, toLog)
+			Logger.log('INFO', "onFetch", "fetch", headers, true, info)
 		} catch (e) {
 			Logger.error('LOGGER_ERROR', 'onFetch logger', 'error during log generation', null, e)
 		}
@@ -274,12 +282,10 @@ export class Logger {
 					operationName: params['operationName'],
 					variables: params['variables']
 				}
-				const ctx = { headers: headersToLog(headers, this.logTrackerHeaders, this.logHeaders, this.trackerOnly) }
-
-				Logger.log('INFO', "graphqlQuery", "GraphQL Query", ctx, queryTolog)
+				Logger.log('INFO', "graphqlQuery", "GraphQL Query", headers, true, queryTolog)
 			}
 		} catch (e) {
-			Logger.error('LOGGER_ERROR', 'graphql query logger', 'error during log generation', null, e)
+			Logger.error('LOGGER_ERROR', 'graphql query logger', 'error during log generation', headers,null, e)
 		}
 	}
 	private static isEventToLog(headers): boolean {
@@ -289,6 +295,57 @@ export class Logger {
 			}
 		}
 		return true
+	}
+	private static addHeadersToContextLog(log: any, headers: any) {
+
+		try {
+			const headerMap = headers["_map"]
+			if (headerMap) {
+				if (this.logContextHeaders) {
+
+					for (const contextKey in this.logContextHeaders) {
+						const contextHeader = this.logContextHeaders[contextKey]
+						if (headerMap.get(contextHeader.header)) {
+
+							if (contextHeader.header.toLowerCase() == "authorization") {
+								addLog(log, contextHeader.name, mask(headerMap.get('authorization')))
+							} else {
+								addLog(log, contextHeader.name, headerMap.get(contextHeader.header))
+							}
+						}
+					}
+				}
+			}
+		} catch (e) {
+			Logger.error('LOGGER_ERROR', 'onheadersToLog', 'error during headers log generation', headers,null, e)
+		}
+		return log
+	}
+
+	private static addHeadersToLog(log: any, headers: any) {
+    const headerMap = headers["_map"]
+		try {
+
+			if (headerMap) {
+				if (this.logHeaders) {
+
+					for (const logHeaderKey in this.logHeaders) {
+						const logHeader = this.logHeaders[logHeaderKey]
+						if (headerMap.get(logHeader.header)) {
+
+							if (logHeader.header.toLowerCase() == "authorization") {
+								addLog(log, logHeader.name, mask(headerMap.get('authorization')))
+							} else {
+								addLog(log, logHeader.name, headerMap.get(logHeader.header))
+							}
+						}
+					}
+				}
+			}
+		} catch (e) {
+			Logger.error('LOGGER_ERROR', 'onheadersToLog', 'error during headers log generation', headers, null, e)
+		}
+		return log
 	}
 }
 
@@ -349,8 +406,8 @@ function InfoResult(result: any, maxStackLogSize: number, resultLogInfoLevel: st
 				}
 			}
 			responseInfo['dataFields'] = keys
+      responseInfo['nbDataField'] = nbKeys
 		}
-		responseInfo['nbDataField'] = result['data'].keys().length
 	}
 	return responseInfo
 }
@@ -361,48 +418,7 @@ function extractBody(body: String, bodyMaxLogSize: number) {
 		return ""
 	}
 }
-function headersToLog(headers: any, trackerHeaders: string, customHeaders: string, trackerOnly: boolean) {
-	const headersToLog = {}
-	try {
-		const headerMap = headers["_map"]
-		if (headerMap) {
-			if (trackerOnly == false) {
-				if (customHeaders) {
-					const cHeaders = customHeaders.split(',')
 
-					for (const headerKey in cHeaders) {
-						const header = cHeaders[headerKey].trim()
-						if (headerMap.get(header)) {
-							if (header.toLowerCase() == "authorization") {
-								headersToLog[header] = mask(headerMap.get('authorization'))
-							} else {
-								headersToLog[header] = headerMap.get(header)
-							}
-						}
-					}
-				}
-				return headersToLog
-			} else {
-				if (trackerHeaders) {
-					const tHeaders = trackerHeaders.split(',')
-					for (const headerKey in tHeaders) {
-						const header = tHeaders[headerKey]
-						if (headerMap.get(header)) {
-							if (header.toLowerCase() == "authorization") {
-								headersToLog[header] = mask(headerMap.get('authorization'))
-							} else {
-								headersToLog[header] = headerMap.get(header)
-							}
-						}
-					}
-				}
-			}
-		}
-	} catch (e) {
-		Logger.error('LOGGER_ERROR', 'onheadersToLog', 'error during headers log generation', null, e)
-	}
-	return headersToLog
-}
 /**
  * Use to add some environment fields to log, like env.name, app.name ...
  * ex : logEnvInfoField : string = "app=graphql,env.name=production,env.site=Paris"
@@ -437,8 +453,36 @@ function addEnvFieldLog(logEnvInfoField: string, log: any) {
 		}
 	}
 }
+function addLog(log: any, key: string, value: any) {
 
+	const levelField = key.split(".")
+	let current = log
+	// create new object if does not exist for each level and set value for leaf level
+	for (let idxLevel = 0; idxLevel < levelField.length; idxLevel++) {
+		if (current[levelField[idxLevel]]) {
+			current = current[levelField[idxLevel]]
+		} else {
+			if (idxLevel < levelField.length - 1) {
+				current = current[levelField[idxLevel]] = {}
+			} else {
+				current[levelField[idxLevel]] = value
+			}
+		}
+	}
+}
+function defineLogHeaders(logHeaders: string) {
+	const headersList = []
+	if (logHeaders) {
+		const headers = logHeaders.split(',')
 
+		for (const headerKey in headers) {
+			const header = headers[headerKey]
+			const headerInfo = header.split('=')
+			headersList.push({ name: headerInfo[0], header: headerInfo[1] ? headerInfo[1] : headerInfo[0] })
+		}
+	}
+	return headersList
+}
 
 
 

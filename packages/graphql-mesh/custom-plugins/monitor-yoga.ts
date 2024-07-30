@@ -1,7 +1,7 @@
 import { Plugin } from 'graphql-yoga'
 import { Logger } from '../utils/logger'
 import { GraphQLError } from 'graphql'
-
+import { v4 as uuidv4 } from 'uuid';
 /**
  * monitor plugin in order to get event contextual log and add some security rules
  * useful to :
@@ -30,6 +30,11 @@ export function useYagaMonitoring({ options }): Plugin {
 			// add resuestTimestamp in headers
 			const timestamp = new Date().getTime();
 			request.headers.append("requestTimestamp", String(timestamp))
+			
+			// add x-request-id in header if not present
+			if (!request.headers.get('x-request-id')){
+				request.headers.append("x-request-id", uuidv4())
+			}
 			
 		},
 		onRequestParse(args) {

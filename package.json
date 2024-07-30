@@ -23,6 +23,7 @@
   },
   "packageManager": "npm@9.5.1",
   "dependencies": {
-    "prom-client": "^15.1.3"
+    "prom-client": "^15.1.3",
+    "uuid": "^10.0.0"
   }
 }
