@@ -1,6 +1,8 @@
 /**
  * Logger : Class static
- *
+ * use to log event with much useful context information and some useful data
+ * 
+ * TODO : split into specifiques loggers and core logger
  */
 import { v4 as uuidv4 } from 'uuid';
 
@@ -15,7 +17,7 @@ export class Logger {
 	private static envLog: string = process.env["LogEnvFieldToAdd"] // use to add env extra field in json log ex "app=graphql,env.name=production,env.site=Paris"
 	private static localDateCountry: string = process.env["LogLocalDateCountry"] || "fr-FR"
 	private static logHeaders = defineLogHeaders(process.env["LogHeaders"] || "headers.host=host,headers.origin,headers.user-agent=user-agent,headers.content-length=content-length,headers.authorization=authorization")
-	private static logContextHeaders = defineLogHeaders(process.env["LogHeadersContext"] || "ctx.requestId=x-request-id")
+	private static logContextHeaders = defineLogHeaders(process.env["LogContextHeaders"] || "ctx.requestId=x-request-id")
 	private static skipHealthCheck = process.env["skipHealthCheck"] ? process.env["skipHealthCheck"] == "true" : true
 	private static healthCheckHeaderName = process.env["healthCheckHeazder"] || "x-internal"
 	private static HealthCheckHeaderValue = process.env["healthCheckHeaderValue"] || "health-check"
@@ -24,7 +26,7 @@ export class Logger {
 
 	}
 	/**
-	 * Core logger with Human format or machine one line json string format
+	 * Core logger with Human format or machine in one line json string format
 	 */
 	private static log(level: string, typeEv: string, message: string, headers = null, onlyContextHeader: boolean, info: any = null, err = null) {
 
@@ -74,7 +76,7 @@ export class Logger {
 				}
 
 			} catch (e) {
-				log['error'] = "error whileg getting log event contextual info :"+e.message
+				log['error'] = "error whileg getting log event contextual info :" + e.message
 			}
 			console.log(JSON.stringify(log))
 		} else {
@@ -103,6 +105,11 @@ export class Logger {
 			Logger.log('DEBUG', typeEv, source + ":" + message, headers, true, info, e)
 		}
 	}
+	
+	
+	/**
+	 * log the on parse event 
+	 */
 	public static onParse(headers: any) {
 		try {
 			if (this.isEventToLog(headers)) {
@@ -113,47 +120,50 @@ export class Logger {
 
 		}
 	}
-	public static endExec(headers: any, result: any, duration: number, resultLogInfoLevel) {
+	
+	/**
+	 * log the on end exec done event 
+	 */
+	public static endExec(headers: any, result: any, duration: number, resultLogInfo: any) {
 		try {
 			if (this.isEventToLog(headers)) {
 				const info = {
-					result: {
-						hasErrors: (result['errors'] != undefined),
-						hasData: (result['data'] != undefined),
-						resultSummayInfo: InfoResult(result, this.maxSkackLogSize, resultLogInfoLevel)
-					},
+					result: InfoResult(result, this.maxSkackLogSize, resultLogInfo),
 					duration: duration,
 				}
 				Logger.log('INFO', "endExecDone", "Request", headers, true, info)
 			}
 		} catch (e) {
-			Logger.error('LOGGER_ERROR', 'endExec logger', 'error during log generation', headers,null, e)
-
+			Logger.error('LOGGER_ERROR', 'endExec logger', 'error during log generation', headers, null, e)
 		}
 	}
 
-	public static onResultProcess(request: any, result: any, resultLogInfo) {
-    const headers = request['headers']
+	/**
+	 * log the on result process event 
+	 */
+	public static onResultProcess(request: any, result: any, duration: number,resultLogInfo: any) {
+		const headers = request['headers']
 		try {
 
 			if (this.isEventToLog(headers)) {
 
-
 				const info = {
-					hasErrors: result['errors'] ? true : false,
-					hasData: result['data'] ? true : false,
-					responseInfo: InfoResult(result, this.maxSkackLogSize, resultLogInfo)
+					result: InfoResult(result, this.maxSkackLogSize, resultLogInfo),
+					duration: duration
 				}
-
 				Logger.log('INFO', "onResultProcess", "Result", headers, true, info)
 			}
 		} catch (e) {
-			Logger.error('LOGGER_ERROR', 'onResponse logger', 'error during log generation', headers,null, e)
+			Logger.error('LOGGER_ERROR', 'onResponse logger', 'error during log generation', headers, null, e)
 		}
 	}
-
+	
+	/**
+	 * log the on request parse done event 
+	 */
 	public static onRequestParseDone(headers: any, query: any, operation: string, variables: any, duration: number) {
 		if (this.isEventToLog(headers)) {
+
 			const info = {
 				operation: operation,
 				query: query,
@@ -163,22 +173,20 @@ export class Logger {
 			Logger.log('INFO', "requestParseDone", "requestParse", headers, true, info)
 		}
 	}
-
+	/**
+	 * log the on reponse event http respnse return 
+	 */
 	public static onResponse(request: any, response: any, logResponseLevellevel: string) {
 		const headers = request['headers']
-    try {
-
+		try {
 			if (this.isEventToLog(headers)) {
-
 				// calculate duration from request timestamp
 				const requestTimestampString: string = headers.get('requesttimestamp')
 				let requestTimestamp: number;
 				if (requestTimestampString) {
 					requestTimestamp = parseInt(requestTimestampString)
 				}
-
 				const responseTimestamp = new Date().getTime();
-
 				const info = {
 					request: {
 						url: request.url,
@@ -195,7 +203,7 @@ export class Logger {
 					info.response['bodyExtract'] = extractBody(response.bodyInit, this.bodyMaxLogSize)
 				}
 
-				Logger.log('INFO', "onResponse", "response", headers, true, info)
+				Logger.log('INFO', "onResponse", responseSummary(response.bodyInit), headers, true, info)
 			}
 		}
 		catch (e) {
@@ -205,7 +213,6 @@ export class Logger {
 
 	public static introspection(headers, info, query) {
 		try {
-
 			const info = {
 				query: query
 			}
@@ -218,8 +225,6 @@ export class Logger {
 
 	public static denyIntrospection(headers, info, message,) {
 		try {
-
-
 			Logger.warn('DENY_INTROSPECTION', info, message, headers)
 		}
 		catch (e) {
@@ -229,8 +234,6 @@ export class Logger {
 
 	public static allowIntrospection(headers, info, message,) {
 		try {
-
-
 			Logger.warn('ALLOW_INTROSPECTION', info, message, headers)
 		}
 		catch (e) {
@@ -238,18 +241,15 @@ export class Logger {
 		}
 	}
 	public static onRequest(request: any) {
-    const headers = request['headers']
+		const headers = request['headers']
 		try {
 			const headers = request['headers']
 			if (this.isEventToLog(headers)) {
-
 				const info = {
-
 					url: request.url,
 					method: request.method,
 					//body: request.body
 				}
-
 				Logger.log('INFO', "onRequest", "request incomming", headers, false, info)
 			}
 		}
@@ -258,7 +258,7 @@ export class Logger {
 		}
 	}
 
-	public static onFetch(request: any,  url: string, httpStatus: string, duration: number,fetchInfo: any) {
+	public static onFetch(request: any, url: string, httpStatus: string, duration: number, fetchInfo: any) {
 		try {
 			const headers = request['headers']
 			const info = {
@@ -285,7 +285,7 @@ export class Logger {
 				Logger.log('INFO', "graphqlQuery", "GraphQL Query", headers, true, queryTolog)
 			}
 		} catch (e) {
-			Logger.error('LOGGER_ERROR', 'graphql query logger', 'error during log generation', headers,null, e)
+			Logger.error('LOGGER_ERROR', 'graphql query logger', 'error during log generation', headers, null, e)
 		}
 	}
 	private static isEventToLog(headers): boolean {
@@ -302,7 +302,6 @@ export class Logger {
 			const headerMap = headers["_map"]
 			if (headerMap) {
 				if (this.logContextHeaders) {
-
 					for (const contextKey in this.logContextHeaders) {
 						const contextHeader = this.logContextHeaders[contextKey]
 						if (headerMap.get(contextHeader.header)) {
@@ -317,22 +316,20 @@ export class Logger {
 				}
 			}
 		} catch (e) {
-			Logger.error('LOGGER_ERROR', 'onheadersToLog', 'error during headers log generation', headers,null, e)
+			Logger.error('LOGGER_ERROR', 'onheadersToLog', 'error during headers log generation', headers, null, e)
 		}
 		return log
 	}
 
 	private static addHeadersToLog(log: any, headers: any) {
-    const headerMap = headers["_map"]
+		const headerMap = headers["_map"]
 		try {
-
 			if (headerMap) {
 				if (this.logHeaders) {
 
 					for (const logHeaderKey in this.logHeaders) {
 						const logHeader = this.logHeaders[logHeaderKey]
 						if (headerMap.get(logHeader.header)) {
-
 							if (logHeader.header.toLowerCase() == "authorization") {
 								addLog(log, logHeader.name, mask(headerMap.get('authorization')))
 							} else {
@@ -357,22 +354,25 @@ function mask(stringToMask: string) {
 }
 
 function InfoResult(result: any, maxStackLogSize: number, resultLogInfoLevel: string) {
-	let responseInfo = {}
+	let resultInfo = {}
 	let keys = null
 	let nbKeys = 0
-	let maxKeys = 20
+	const maxKeys = 1
+  const nbErrorsMaxToLog=3
 	if (result['errors']) {
-		responseInfo['errors'] = []
-		responseInfo['nbErrors'] = result['errors'].length
-
+		resultInfo['nbErrors'] = result['errors'].length
 		if (resultLogInfoLevel != 'low') {
+      let nbErrors=0
+			resultInfo['errors'] = []
 			for (const errorKey in result['errors']) {
 				const error = result['errors'][errorKey]
 				let logError = {}
 				if (error['message']) {
+          if (nbErrorsMaxToLog > nbErrors ){
 					logError['message'] = error['message']
+          }
 				}
-				if (resultLogInfoLevel == 'higth') {
+				if (resultLogInfoLevel == 'hight') {
 					if (error['path']) {
 						logError['path'] = error['path']
 					}
@@ -384,14 +384,13 @@ function InfoResult(result: any, maxStackLogSize: number, resultLogInfoLevel: st
 						logError['extensions'] = error['extensions']
 					}
 				}
-				responseInfo['errors'].push(logError)
+				resultInfo['errors'].push(logError)
 			}
 		}
 	} else {
-		responseInfo['nbErrors'] = 0
+		resultInfo['nbErrors'] = 0
 	}
 	if (result['data']) {
-		if (resultLogInfoLevel != 'low') {
 			let keys = null
 			for (const key in result['data']) {
 				if (result['data'].hasOwnProperty(key)) {
@@ -405,11 +404,9 @@ function InfoResult(result: any, maxStackLogSize: number, resultLogInfoLevel: st
 					nbKeys = nbKeys + 1
 				}
 			}
-			responseInfo['dataFields'] = keys
-      responseInfo['nbDataField'] = nbKeys
-		}
+			resultInfo['dataFields'] = keys
 	}
-	return responseInfo
+	return resultInfo
 }
 function extractBody(body: String, bodyMaxLogSize: number) {
 	if (body != null) {
@@ -418,6 +415,14 @@ function extractBody(body: String, bodyMaxLogSize: number) {
 		return ""
 	}
 }
+function responseSummary(body: String) {
+	if (body != null) {
+		return "response :" + body.substring(0, 100) + " ... "
+	} else {
+		return "response : empty"
+	}
+}
+
 
 /**
  * Use to add some environment fields to log, like env.name, app.name ...

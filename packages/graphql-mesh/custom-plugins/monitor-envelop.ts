@@ -6,8 +6,8 @@ import { GraphQLError } from 'graphql';
  * monitor plugin in order to get event contextual log and add some security rules
  * useful to
  * - log the graphql Query event
- * - add desabled introspection alidation rule
- * - remove suggestion
+ * - add desabled introspection validation rule
+ * - remove suggestion message
  * - log the execute result summary with executes duration
  * - remove not allowed introspection in result
  */
@@ -31,11 +31,10 @@ export default ({ options }): Plugin => {
 	const isMaskSuggestion = options?.maskSuggestion?.enabled || false
 	const maskSuggestionMessage = options?.maskSuggestion?.message || ""
 	return {
-		onParse({ params, context }) {
-			Logger.graphqlQuery(context['request']['headers'], context['params'])
-			/*return ({ result, context, replaceParseResult }) => {
-				Logger.info('LOG', 'onParse', 'result', result)
-			}*/
+		onParse({ context }) {
+			if (options.logOnParse) {
+				Logger.graphqlQuery(context['request']['headers'], context['params'])
+			}
 		},
 
 		onValidate: ({ addValidationRule, context }) => {
@@ -80,13 +79,12 @@ export default ({ options }): Plugin => {
 
 			return function onValidateEnd({ valid, result, setResult }) {
 				if (isMaskSuggestion && !valid) {
-					setResult(result.map((error) => formatter(error, maskSuggestionMessage)));
+					setResult(result.map((error: GraphQLError) => formatter(error, maskSuggestionMessage)));
 				}
 			};
 		},
 
-		onExecute({ args, extendContext }) {
-
+		onExecute(/*{ args, extendContext }*/) {
 			let timestampDebut = new Date().getTime()
 			return {
 				before() {
@@ -95,14 +93,15 @@ export default ({ options }): Plugin => {
 				},
 				onExecuteDone({ result, args }) {
 					const timestampDone = new Date().getTime();
-
 					// short cut to desabled introspection response in case of bad configuration rule
 					if (!allowIntrospection && args.contextValue['params'].query.includes('__schema')) {
 						result['data'] = {}
 						result['errors'] = [{ message: "Fordidden" }]
 						Logger.error('SECU', 'onExecute', 'Introspection query deteted not allowed', args.contextValue['params'])
 					}
-					Logger.endExec(args.contextValue['request']['headers'], result, timestampDone - timestampDebut, resultLogInfoLevel)
+					if (options.loOnExecuteDone) {
+						Logger.endExec(args.contextValue['request']['headers'], result, timestampDone - timestampDebut, resultLogInfoLevel)
+					}
 				}
 			}
 		}
