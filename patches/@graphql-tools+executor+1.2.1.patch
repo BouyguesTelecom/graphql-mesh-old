@@ -1,7 +1,7 @@
 diff --git a/node_modules/@graphql-tools/executor/cjs/execution/execute.js b/node_modules/@graphql-tools/executor/cjs/execution/execute.js
 old mode 100644
 new mode 100755
-index 791e3df..1e8e7fb
+index 791e3df..0210559
 --- a/node_modules/@graphql-tools/executor/cjs/execution/execute.js
 +++ b/node_modules/@graphql-tools/executor/cjs/execution/execute.js
 @@ -628,8 +628,13 @@ function completeAbstractValue(exeContext, returnType, fieldNodes, info, path, r
@@ -32,7 +32,7 @@ index 791e3df..1e8e7fb
 +      const splits = runtimeTypeName.split('_')
 +      // Remove the version
 +      splits.pop()
-+      let joinedSplits = f.join('_')
++      let joinedSplits = splits.join('_')
 +      // If the runtimeTypeName is not versioned
 +      if (joinedSplits === "") {
 +        joinedSplits = runtimeTypeName
