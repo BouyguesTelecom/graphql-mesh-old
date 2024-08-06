@@ -1,7 +1,7 @@
 diff --git a/node_modules/@graphql-tools/executor/cjs/execution/execute.js b/node_modules/@graphql-tools/executor/cjs/execution/execute.js
 old mode 100644
 new mode 100755
-index 791e3df..ae399d9
+index 791e3df..0333b51
 --- a/node_modules/@graphql-tools/executor/cjs/execution/execute.js
 +++ b/node_modules/@graphql-tools/executor/cjs/execution/execute.js
 @@ -628,8 +628,13 @@ function completeAbstractValue(exeContext, returnType, fieldNodes, info, path, r
@@ -19,7 +19,7 @@ index 791e3df..ae399d9
      }
      // releases before 16.0.0 supported returning `GraphQLObjectType` from `resolveType`
      // TODO: remove in 17.0.0 release
-@@ -640,6 +645,17 @@ function ensureValidRuntimeType(runtimeTypeName, exeContext, returnType, fieldNo
+@@ -640,6 +645,18 @@ function ensureValidRuntimeType(runtimeTypeName, exeContext, returnType, fieldNo
          throw (0, utils_1.createGraphQLError)(`Abstract type "${returnType.name}" must resolve to an Object type at runtime for field "${info.parentType.name}.${info.fieldName}" with ` +
              `value ${(0, utils_1.inspect)(result)}, received "${(0, utils_1.inspect)(runtimeTypeName)}".`);
      }
@@ -29,7 +29,8 @@ index 791e3df..ae399d9
 +      .find(a => a.name.value === "mapping").value.value)
 +    Object.keys(mappedTypes).forEach((type) => {
 +      // For each key in the mapping object, check if the runtimeTypeName includes the key
-+      if (runtimeTypeName.includes(type)) {
++      const runtimeTypeNameWithoutVersion = runtimeTypeName.substring(0, runtimeTypeName.length-3)
++      if (runtimeTypeNameWithoutVersion === type) {
 +        // Replace the key with its corresponding mapped type in the runtimeTypeName
 +        runtimeTypeName = runtimeTypeName.replace(type, mappedTypes[type])
 +      }
