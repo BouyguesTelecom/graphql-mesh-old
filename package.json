@@ -11,8 +11,10 @@
     "postinstall": "npm run postinstall -w graphql-mesh && patch-package && npm run generate:mesh:lock",
     "build:local:packages": "concurrently \"npm run pack -w directive-spl\" \"npm run pack -w inject-additional-transforms\"",
     "preinstall": "npm run build:local:packages",
-    "start": "npm start -w graphql-mesh"
-  },
+    "start": "npm start -w graphql-mesh",
+    "startmesh": "npm run startmesh -w graphql-mesh",
+	"server": "npm run server -w graphql-mesh"
+ },
   "devDependencies": {
     "concurrently": "^8.2.2",
     "patch-package": "^8.0.0"
@@ -20,5 +22,9 @@
   "engines": {
     "node": "18"
   },
-  "packageManager": "npm@9.5.1"
+  "packageManager": "npm@9.5.1",
+  "dependencies": {
+    "prom-client": "^15.1.3",
+    "uuid": "^10.0.0"
+  }
 }
