@@ -55,7 +55,11 @@ const downloadSwaggers = (swaggers: (string | undefined)[]) => {
   }
 
   if (swaggers.length) {
-    swaggers.forEach((file, index) => downSwaggerFromUrl(file, index.toString()))
+	for (const swaggerIndex in swaggers){
+		console.log("swagger:",swaggers[swaggerIndex])
+		downSwaggerFromUrl(swaggers[swaggerIndex], swaggerIndex.toString())
+	}
+    //swaggers.forEach((file, index) => downSwaggerFromUrl(file, index.toString()))
   }
 }
 
