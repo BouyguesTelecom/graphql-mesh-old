@@ -12,7 +12,7 @@ index 5e752ad..3b487f5 100644
          const currentNamedType = (0, graphql_1.getNamedType)(c.type);
          if (finalNamedType.toString() !== currentNamedType.toString()) {
 diff --git a/node_modules/@graphql-tools/stitch/cjs/typeCandidates.js b/node_modules/@graphql-tools/stitch/cjs/typeCandidates.js
-index c915942..ae923fe 100644
+index c915942..4b4a2e7 100644
 --- a/node_modules/@graphql-tools/stitch/cjs/typeCandidates.js
 +++ b/node_modules/@graphql-tools/stitch/cjs/typeCandidates.js
 @@ -119,6 +119,33 @@ function buildTypes({ typeCandidates, directives, stitchingInfo, rootTypeNames,
@@ -33,9 +33,9 @@ index c915942..ae923fe 100644
 +                    otherCandidates.forEach((otherCandidate) => {
 +                        // Add fields from other candidates to the final interface
 +                        Object.keys(otherCandidate.type._fields).forEach(field => {
-+                          if (finalI.type._fields[field] === undefined) {
-+                              finalI.type._fields[field] = otherCandidate.type._fields[field];
-+                          }
++                            if (finalI.type._fields[field] === undefined) {
++                                finalI.type._fields[field] = otherCandidate.type._fields[field];
++                            }
 +                        })
 +                    });
 +                    typeCandidates[typeName] = [finalI];
@@ -49,7 +49,7 @@ index c915942..ae923fe 100644
              typeMap[typeName] = (0, mergeCandidates_js_1.mergeCandidates)(typeName, typeCandidates[typeName], typeMergingOptions);
          }
          else {
-@@ -128,6 +155,61 @@ function buildTypes({ typeCandidates, directives, stitchingInfo, rootTypeNames,
+@@ -128,6 +155,71 @@ function buildTypes({ typeCandidates, directives, stitchingInfo, rootTypeNames,
              typeMap[typeName] = candidateSelector(typeCandidates[typeName]).type;
          }
      }
@@ -64,48 +64,58 @@ index c915942..ae923fe 100644
 +                let duplicateFields = {};
 +
 +                typeInterfaces.forEach(i => {
-+                  const iFields = typeMap[i.name].getFields();
-+                  Object.keys(iFields).forEach(keyName => {
-+                      if (uniqueFields[keyName] === undefined) {
-+                          uniqueFields[keyName] = "defined";
-+                      }
-+                      else {
-+                          duplicateFields[keyName] = iFields[keyName];
-+                      }
-+                  })
++                    const iFields = typeMap[i.name].getFields();
++                    Object.keys(iFields).forEach(keyName => {
++                        if (uniqueFields[keyName] === undefined) {
++                            uniqueFields[keyName] = "defined";
++                        }
++                        else {
++                            duplicateFields[keyName] = iFields[keyName];
++                        }
++                    })
 +                })
 +                // Ensure duplicate fields are consistent across implementations
 +                Object.keys(duplicateFields).forEach(field => {
-+                  if (type.getFields()[field] !== undefined) {
-+                      type._fields[field] = duplicateFields[field];
-+                  }
-+                  typeInterfaces.forEach(i => {
-+                      const iFields = typeMap[i.name].getFields();
++                    if (type.getFields()[field] !== undefined) {
++                        type._fields[field] = duplicateFields[field];
++                    }
++                    typeInterfaces.forEach(i => {
++                        const iFields = typeMap[i.name].getFields();
 +
-+                      if (iFields[field] !== undefined) {
-+                          typeMap[i.name]._fields[field] = duplicateFields[field];
-+                      }
-+                  })
++                        if (iFields[field] !== undefined) {
++                            typeMap[i.name]._fields[field] = duplicateFields[field];
++                        }
++                    })
 +                })
 +            }
 +        }
 +    });
 +    // Ensure object types implement all fields from their interfaces
 +    Object.values(typeMap).forEach((type) => {
-+      if (type.constructor.name === "GraphQLObjectType") {
-+          const typeInterfaces = type.getInterfaces();
++        if (type.constructor.name === "GraphQLObjectType") {
++            const typeInterfaces = type.getInterfaces();
 +
-+          if (typeInterfaces.length !== 0) {
-+              type._fields = type.getFields();
++            if (typeInterfaces.length !== 0) {
++                type._fields = type.getFields();
 +
-+              typeInterfaces.forEach(i => {
-+                  const iFields = typeMap[i.name].getFields();
-+                  Object.keys(iFields).forEach(keyName => {
-+                      type._fields[keyName] = iFields[keyName];
-+                  })
-+              })
-+          }
-+      }
++                typeInterfaces.forEach(i => {
++                    const iFields = typeMap[i.name].getFields();
++                    Object.keys(iFields).forEach(keyName => {
++                        type._fields[keyName] = iFields[keyName];
++                    })
++                })
++            }
++        }
++    })
++    // Add a default type for all the interfaces
++    Object.values(typeMap).forEach((type) => {
++        if (type.constructor.name === "GraphQLInterfaceType") {
++            typeMap[`Default__${type.name}`] = new graphql_1.GraphQLObjectType({
++                name: `Default__${type.name}`,
++                fields: type.getFields(),
++                interfaces: [type]
++            })
++        }
 +    })
 +
      return (0, utils_1.rewireTypes)(typeMap, directives);

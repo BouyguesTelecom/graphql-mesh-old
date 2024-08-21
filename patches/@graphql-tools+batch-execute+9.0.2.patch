@@ -7,8 +7,8 @@ index dfe8afc..b60987c 100644
          info: requests[0].info,
          operationType,
 -        rootValue: requests[0].rootValue,
-+        // FIXME: Extend the rootValue with the followsLink to save followLink for all requests that are merged and executed in parallel
-+        rootValue: { ...requests[0].rootValue, followsLink: requests.map((request) => ({ followLink: request.rootValue.followLink })) },
++        // Extend the rootValue with an array of the available links
++        rootValue: { ...requests[0].rootValue, followLinks: requests.map((request) => ({ followLink: request.rootValue.followLink })) },
      };
  }
  exports.mergeRequests = mergeRequests;

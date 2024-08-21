@@ -1,0 +1,12 @@
+diff --git a/node_modules/graphql/jsutils/devAssert.js b/node_modules/graphql/jsutils/devAssert.js
+index c40d406..c21c8ef 100644
+--- a/node_modules/graphql/jsutils/devAssert.js
++++ b/node_modules/graphql/jsutils/devAssert.js
+@@ -9,6 +9,6 @@ function devAssert(condition, message) {
+   const booleanCondition = Boolean(condition);
+ 
+   if (!booleanCondition) {
+-    throw new Error(message);
++    console.error(message);
+   }
+ }

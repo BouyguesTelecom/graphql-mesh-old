@@ -135,6 +135,7 @@ export default class ConfigFromSwaggers {
             }
           })
         }
+        this.interfacesWithChildren[schemaKey].push(`Default__${schemaKey.split('_')[0]}`)
       }
     })
     return this.interfacesWithChildren
