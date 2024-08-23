@@ -234,7 +234,7 @@ describe('ConfigFromSwaggers tests', () => {
   // Test function to get interfaces with their children
   it('should return interfaces with children correctly', () => {
     const expectedInterfacesWithChildren: Record<string, string[]> = {
-      Vehicle: ['Car', 'Bike']
+      Vehicle: ['Car', 'Bike', 'Default__Vehicle']
     }
     expect(instance.getInterfacesWithChildren()).toEqual(expectedInterfacesWithChildren)
   })
