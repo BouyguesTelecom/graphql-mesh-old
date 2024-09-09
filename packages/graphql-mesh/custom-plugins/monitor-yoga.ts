@@ -18,7 +18,7 @@ export function useYagaMonitoring({ options }): Plugin {
 	// filter error in production anyway
 	const isFilterError = options?.filterError?.enabled || process.env['FILTER_ERRORS'] == 'true' || process.env['IS_PROUCTION_ENV'] == 'true' || false
 	const errorMaskMessage = options?.maskError?.message ? options.maskError.message : "something goes wrong"
-	const responseLogInfoLevel = options?.responseLogInfoLevel ? options.responseLogInfoLevel : "low"
+	const responseLogInfoLevel = options?.responseLogInfoLevel ? options.responseLogInfoLevel : "medium"
 	const resultLogInfoLevel = options?.resultLogInfoLevel ? options.resultLogInfoLevel : "medium"
 
 	return {
@@ -50,7 +50,7 @@ export function useYagaMonitoring({ options }): Plugin {
 						Logger.onRequestParseDone(requestHeaders, nRequestParseDoneEventPayload.requestParserResult['query'], nRequestParseDoneEventPayload.requestParserResult['operationName'], nRequestParseDoneEventPayload.requestParserResult['variables'], timestamp - beforeTimestamp)
 					}
 					if (nRequestParseDoneEventPayload.requestParserResult['query'].includes('__schema')) {
-						Logger.introspection( requestHeaders, nRequestParseDoneEventPayload.requestParserResult['query'])
+						Logger.introspection(requestHeaders, nRequestParseDoneEventPayload.requestParserResult['query'])
 					}
 				}
 			}
@@ -78,15 +78,15 @@ export function useYagaMonitoring({ options }): Plugin {
 				}
 			} else {
 				// if we want to filter error to only return the message, don't return extend information like stacktrace
-				if (isFilterError) {
-					if (args.result['errors']) {
+
+				if (args.result['errors']) {
+					if (isFilterError) {
 						let errors = args.result['errors']
 						for (let i = 0; i < errors.length; i++) {
-							errors[i] = new GraphQLError(filterErrorMessage(errors[i]['message']))
+							// return only message and path 
+							errors[i] = new GraphQLError(filterErrorMessage(errors[i]['message']), { path: errors[i]['path'] })
 						}
-
 					}
-
 				}
 			}
 		},

@@ -11,9 +11,8 @@ export class Logger {
 
 	private static level: string = process.env["LogLevel"] || "INFO"
 	private static format: string = process.env["LogFormat"] || "HUMAN" // set JSON_STRING to have one line json string by log
-	private static bodyMaxLogSize = process.env["LogBodyMaxSize"] ? parseInt(process.env["LogBodyMaxSize"]) : 100
-	private static maxSkackLogSize = process.env["LogStackTraceMaxSize"] ? parseInt(process.env["LogStackTraceMaxSize"]) : 100
-	private static trackerOnly: boolean = process.env["LogTrackerHeadersOnly"] ? process.env["LogTrackerHeadersOnly"] == 'true' : false
+	private static bodyMaxLogSize = process.env["LogBodyMaxSize"] ? parseInt(process.env["LogBodyMaxSize"]) : 200
+	private static maxSkackLogSize = process.env["LogStackTraceMaxSize"] ? parseInt(process.env["LogStackTraceMaxSize"]) : 500
 	private static envLog: string = process.env["LogEnvFieldToAdd"] // use to add env extra field in json log ex "app=graphql,env.name=production,env.site=Paris"
 	private static localDateCountry: string = process.env["LogLocalDateCountry"] || "fr-FR"
 	private static logHeaders = defineLogHeaders(process.env["LogHeaders"] || "headers.host=host,headers.origin,headers.user-agent=user-agent,headers.content-length=content-length,headers.authorization=authorization")
@@ -188,7 +187,7 @@ export class Logger {
 	/**
 	 * log the on reponse event http respnse return
 	 */
-	public static onResponse(request: any, response: any, logResponseLevellevel: string) {
+	public static onResponse(request: any, response: any, logResponseLevel: string) {
 		const headers = request['headers']
 		try {
 			if (this.isEventToLog(headers)) {
@@ -211,7 +210,7 @@ export class Logger {
 					httpStatus: response.status,
 					duration: responseTimestamp - requestTimestamp
 				}
-				if (logResponseLevellevel != 'low') {
+				if (logResponseLevel != 'low') {
 					info.response['bodyExtract'] = extractBody(response.bodyInit, this.bodyMaxLogSize)
 				}
 
@@ -382,7 +381,6 @@ function mask(stringToMask: string) {
 
 function InfoResult(result: any, maxStackLogSize: number, resultLogInfoLevel: string) {
 	let resultInfo = {}
-	let keys = null
 	let nbKeys = 0
 	const maxKeys = 1
 	const nbErrorsMaxToLog = 3
@@ -399,10 +397,10 @@ function InfoResult(result: any, maxStackLogSize: number, resultLogInfoLevel: st
 						logError['message'] = error['message']
 					}
 				}
-				if (resultLogInfoLevel == 'hight') {
-					if (error['path']) {
-						logError['path'] = error['path']
-					}
+				if (error['path']) {
+					logError['path'] = error['path']
+				}
+				if (resultLogInfoLevel == 'high') {
 					// no stack trace and extension in low trace level
 					if (error['stack']) {
 						logError['stack'] = error['stack'].substring(0, maxStackLogSize)

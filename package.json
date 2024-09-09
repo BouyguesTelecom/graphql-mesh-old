@@ -13,7 +13,7 @@
     "preinstall": "npm run build:local:packages",
     "start": "npm start -w graphql-mesh",
     "startmesh": "npm run startmesh -w graphql-mesh",
-	"server": "npm run server -w graphql-mesh"
+	"serve": "npm run serve -w graphql-mesh"
  },
   "devDependencies": {
     "concurrently": "^8.2.2",
