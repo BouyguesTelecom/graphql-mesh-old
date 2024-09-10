@@ -4,7 +4,7 @@
     "build": "npm run downloadswaggers && mesh build",
     "downloadswaggers": "NODE_TLS_REJECT_UNAUTHORIZED='0' sucrase-node ./scripts/download-sources.ts",
     "postinstall": "patch-package",
-    "serve": "npm run build && sucrase-node serve.ts",
+    "serve": "npm run build && mesh start",
     "start": "npm run downloadswaggers && mesh dev",
     "test": "vitest"
   },
