@@ -1,5 +1,5 @@
 diff --git a/node_modules/@graphql-mesh/merger-stitching/cjs/index.js b/node_modules/@graphql-mesh/merger-stitching/cjs/index.js
-index 381e473..0f7ecb2 100644
+index 381e473..3a4db3d 100644
 --- a/node_modules/@graphql-mesh/merger-stitching/cjs/index.js
 +++ b/node_modules/@graphql-mesh/merger-stitching/cjs/index.js
 @@ -1,5 +1,17 @@
@@ -20,7 +20,7 @@ index 381e473..0f7ecb2 100644
  const stitch_1 = require("@graphql-tools/stitch");
  class StitchingMerger {
      constructor(options) {
-@@ -42,6 +54,24 @@ class StitchingMerger {
+@@ -42,6 +54,21 @@ class StitchingMerger {
                  },
              }),
          });
@@ -29,18 +29,15 @@ index 381e473..0f7ecb2 100644
 +        Object.keys(unifiedSchema._typeMap).forEach((type) => {
 +            unifiedSchema._typeMap[type]._fields = sortKeys(unifiedSchema._typeMap[type]._fields);
 +        });
-+        // Sort query inputs alphabetically
-+        Object.keys(unifiedSchema._typeMap.Query._fields).forEach((field) => {
-+            if (unifiedSchema._typeMap.Query._fields[field].args) {
-+                unifiedSchema._typeMap.Query._fields[field].args = unifiedSchema._typeMap.Query._fields[field].args.sort((a,b) => a.name.localeCompare(b.name))
-+            }
-+        })
-+        // Sort mutation inputs alphabetically
-+        Object.keys(unifiedSchema._typeMap.Mutation._fields).forEach((field) => {
-+            if (unifiedSchema._typeMap.Mutation._fields[field].args) {
-+                unifiedSchema._typeMap.Mutation._fields[field].args = unifiedSchema._typeMap.Mutation._fields[field].args.sort((a,b) => a.name.localeCompare(b.name))
-+            }
-+      })
++        // Sort query and mutation inputs alphabetically
++        ['Query', 'Mutation'].forEach((operation) => {
++            const fields = unifiedSchema._typeMap[operation]._fields;
++            Object.keys(fields).map(field => {
++                if (fields[field].args) {
++                    fields[field].args.sort((a, b) => a.name.localeCompare(b.name));
++                }
++            });
++        });
 +
          return {
              schema: unifiedSchema,
