@@ -44,16 +44,13 @@ export const generateTypeDefsAndResolversFromSwagger = (
       // Filter for special keys such as 'x-links' and 'x-graphql-prefix-schema-with'
       .filter(isSpecialKey)
       .forEach(([key, value]) => {
-
         // HANDLE SCHEMA PREFIXATION
         if (key === 'x-graphql-prefix-schema-with') {
           const schemaType = Object.keys(interfacesWithChildren).includes(schemaKey)
             ? 'interface'
             : 'type'
-
           // Add a prefixSchema directive to the type definition
           typeDefs += `extend ${schemaType} ${schemaKey} @prefixSchema(prefix: "${value}") { dummy: String }\n`
-
           // If it's an interface, add the dummy property to each of its children too
           if (schemaType === 'interface') {
             interfacesWithChildren[schemaKey].forEach((children) => {
@@ -67,7 +64,6 @@ export const generateTypeDefsAndResolversFromSwagger = (
             })
           }
         }
-
         // HANDLE HATEOAS LINKS PROCESSING
         if (key === 'x-links') {
           const trimedSchemaKey = trimLinks(schemaKey)
@@ -151,12 +147,14 @@ export const generateTypeDefsAndResolversFromSwagger = (
                     }`,
 
                     resolve: (root: any, args: any, context: any, info: any) => {
-                      const hateoasLink: any = Object.entries(root._links).find(
-                        (item) => item[0] === xLinkName
-                      )?.[1]
+                      if (root._links) {
+                        const hateoasLink: any = Object.entries(root._links).find(
+                          (item) => item[0] === xLinkName
+                        )?.[1]
 
-                      if (hateoasLink?.href) {
-                        root = { ...root, followLink: hateoasLink.href }
+                        if (hateoasLink?.href) {
+                          root = { ...root, followLink: hateoasLink.href }
+                        }
                       }
 
                       if (paramsToSend.length) {
@@ -223,12 +221,14 @@ export const generateTypeDefsAndResolversFromSwagger = (
                 }`,
 
                 resolve: (root: any, args: any, context: any, info: any) => {
-                  const hateoasLink: any = Object.entries(root._links).find(
-                    (item) => item[0] === xLinkName
-                  )?.[1]
+                  if (root._links) {
+                    const hateoasLink: any = Object.entries(root._links).find(
+                      (item) => item[0] === xLinkName
+                    )?.[1]
 
-                  if (hateoasLink?.href) {
-                    root = { ...root, followLink: hateoasLink.href }
+                    if (hateoasLink?.href) {
+                      root = { ...root, followLink: hateoasLink.href }
+                    }
                   }
 
                   if (paramsToSend.length) {
@@ -257,21 +257,23 @@ export const generateTypeDefsAndResolversFromSwagger = (
 
           // Resolvers for _linksList and _actionsList
           if (Object.keys(subResolver).length) {
-            subTypeDefs += /* GraphQL */ `_linksList: [LinkItem]\n`
-            subResolver['_linksList'] = {
-              selectionSet: /* GraphQL */ `
+            if (_linksItems !== '') {
+              subTypeDefs += /* GraphQL */ `_linksList: [LinkItem]\n`
+              subResolver['_linksList'] = {
+                selectionSet: /* GraphQL */ `
               {
                 _links {
                   ${_linksItems}
                 }
               }`,
-              resolve: (root: any) => {
-                return Object.keys(root?._links || {})
-                  .filter((key) => root._links[key]?.href)
-                  .map((key) => ({
-                    rel: key,
-                    href: root._links[key]?.href
-                  }))
+                resolve: (root: any) => {
+                  return Object.keys(root?._links || {})
+                    .filter((key) => root._links[key]?.href)
+                    .map((key) => ({
+                      rel: key,
+                      href: root._links[key]?.href
+                    }))
+                }
               }
             }
             if (_actionsItems !== '') {
@@ -302,7 +304,7 @@ export const generateTypeDefsAndResolversFromSwagger = (
           // Delete the additional typeDefs section if no new fields have been added
           subTypeDefs = subTypeDefs.replace(`extend ${schemaType} ${trimedSchemaKey} {\n}\n`, '')
 
-          if (subTypeDefs !== "") {
+          if (subTypeDefs !== '') {
             typeDefs += subTypeDefs
             resolvers[trimedSchemaKey] = subResolver
           }
@@ -336,16 +338,12 @@ export const generateTypeDefsAndResolversFromSwagger = (
               }
             })
 
-            // Interfaces need to have the additional '__resolveType' property
+            // Resolvers of interfaces need to have the additional '__resolveType' property
             resolvers[trimedSchemaKey].__resolveType = (res, _, schema) => {
-              if (res.__typename) {
+              if (res.__typename && !interfacesWithChildren[res.__typename]) {
                 return res.__typename
               }
-              const returnTypeName = schema.returnType.name
-              const parentVersion = returnTypeName.split('_')[returnTypeName.split('_').length - 1]
-              return parentVersion !== trimedSchemaKey
-                ? `${interfacesWithChildren[schema.returnType.name][1]}_${parentVersion}`
-                : `${interfacesWithChildren[schema.returnType.name][1]}`
+              return `Default__${schema.returnType.name}`
             }
           }
         }

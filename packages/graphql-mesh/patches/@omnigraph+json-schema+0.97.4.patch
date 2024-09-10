@@ -11,30 +11,30 @@ index 9bbb265..491eb4c 100644
  `;
              }
 diff --git a/node_modules/@omnigraph/json-schema/cjs/addRootFieldResolver.js b/node_modules/@omnigraph/json-schema/cjs/addRootFieldResolver.js
-index 8006747..dfc6825 100644
+old mode 100644
+new mode 100755
+index 8006747..f2af17c
 --- a/node_modules/@omnigraph/json-schema/cjs/addRootFieldResolver.js
 +++ b/node_modules/@omnigraph/json-schema/cjs/addRootFieldResolver.js
-@@ -35,6 +35,23 @@ function addHTTPRootFieldResolver(schema, field, logger, globalFetch, { path, op
+@@ -35,6 +35,21 @@ function addHTTPRootFieldResolver(schema, field, logger, globalFetch, { path, op
          const interpolatedBaseUrl = string_interpolation_1.stringInterpolator.parse(endpoint, interpolationData);
          const interpolatedPath = string_interpolation_1.stringInterpolator.parse(path, interpolationData);
          let fullPath = (0, url_join_1.default)(interpolatedBaseUrl, interpolatedPath);
 +        let subPath;
-+        /**
-+         * FIXME: This is a hack to follow link in the response
-+         * In case where the root object contains several links,
-+         * we need to follow the correct link which match the index of field in the path
-+         */
-+        if (root && root?.followsLink?.length) {
++
++        // HANDLE HATEOAS LINKS
++        if (root && root?.followLinks?.length) {
 +          const index = info?.path?.key?.match(/_(\d+)_/)?.[1];
-+          subPath = root.followsLink?.[index]?.followLink;
++          subPath = root.followLinks?.[index]?.followLink;
 +          fullPath = interpolatedBaseUrl + subPath;
 +        } else if (root && root.followLink) {
 +          subPath = root.followLink;
 +          fullPath = interpolatedBaseUrl + subPath;
 +        }
 +        if (root && !subPath) {
-+          return
++          return;
 +        }
++
          const headers = {};
          for (const headerName in globalOperationHeaders) {
              const nonInterpolatedValue = globalOperationHeaders[headerName];
