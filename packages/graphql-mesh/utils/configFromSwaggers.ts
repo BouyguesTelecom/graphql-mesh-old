@@ -4,7 +4,7 @@ import { Catalog, Spec, ConfigExtension } from '../types'
 import {
   getConfig,
   getSourceName,
-  getSourceOpenapiEnpoint,
+  getSourceOpenapiEndpoint,
   getSourceTransforms
 } from './parseYamlConfig'
 import { mergeObjects } from './helpers'
@@ -224,7 +224,7 @@ export default class ConfigFromSwaggers {
         handler: {
           openapi: {
             source,
-            endpoint: getSourceOpenapiEnpoint(source, this.config) || '{env.ENDPOINT}',
+            endpoint: getSourceOpenapiEndpoint(source, this.config) || '{env.ENDPOINT}',
             ignoreErrorResponses: true,
             operationHeaders: {
               Authorization: `{context.headers["authorization"]}`,
