@@ -1,5 +1,4 @@
-# BUILD
-FROM node:18-slim AS builder
+FROM node:18-alpine AS builder
 
 WORKDIR /build
 
@@ -12,8 +11,7 @@ RUN cd node_modules/typescript/lib && rm -rf cs de es fr it ja ko pl pt-br ru tr
 COPY . ./
 RUN rm ./config.yaml
 
-# RUN
-FROM node:18-slim AS runner
+FROM node:18-alpine AS runner
 
 LABEL org.opencontainers.image.description="GraphQL Mesh Gateway"
 LABEL org.opencontainers.image.vendor="Bouygues Telecom"
