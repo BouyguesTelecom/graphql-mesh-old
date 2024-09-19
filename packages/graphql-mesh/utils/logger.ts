@@ -380,7 +380,7 @@ export class Logger {
     try {
       const headers = request['headers']
       const info = {
-        fetch: fetch,
+        fetch: fetchInfo,
         duration: duration,
         httpStatus: httpStatus,
         url: url
