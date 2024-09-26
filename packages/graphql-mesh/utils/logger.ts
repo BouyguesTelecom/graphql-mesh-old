@@ -385,7 +385,7 @@ export class Logger {
         httpStatus: httpStatus,
         url: url
       }
-      Logger.log('INFO', 'onFetch', 'Fetch', headers, true, info)
+      Logger.log('INFO', 'onFetch', 'Fetch '+url, headers, true, info)
     } catch (e) {
       Logger.error('LOGGER_ERROR', 'onFetch logger', 'Error during log generation', null, e)
     }
